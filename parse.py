@@ -1,8 +1,7 @@
-from textrank import extract_key_phrases
+from textrank import extract_top_terms
 
 with open('sample.txt', 'r') as f:
-    text = f.read()
+    text = f.read().lower()
 
-modified_keyphrases, all_keyphrases = extract_key_phrases(text)
-
-print(all_keyphrases[:20])
+terms = extract_top_terms(text)
+print(terms)

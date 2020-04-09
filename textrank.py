@@ -1,18 +1,8 @@
-"""Python implementation of the TextRank algoritm.
-
-From this paper:
-    https://web.eecs.umich.edu/~mihalcea/papers/mihalcea.emnlp04.pdf
-
-Based on:
-    https://gist.github.com/voidfiles/1646117
-    https://github.com/davidadamojr/TextRank
-"""
-import editdistance
-import io
 import itertools
 import networkx as nx
 import nltk
 import os
+import numpy as np
 
 
 def setup_environment():
@@ -21,26 +11,72 @@ def setup_environment():
     nltk.download('averaged_perceptron_tagger')
     print('Completed resource downloads.')
 
-def filter_for_tags(tagged, tags=['NN', 'JJ', 'NNP']):
-    """Apply syntactic filters based on POS tags."""
+def filter_for_tags(tagged, tags=['NN', 'NNS', 'JJ', 'NNP', 'NNPS']):
+    """
+    Apply syntactic filters based on POS tags.
+    https://pythonprogramming.net/natural-language-toolkit-nltk-part-speech-tagging/
+    """
     return [item[0] for item in tagged if item[1] in tags]
 
-def build_graph(sentences):
-    """Return a networkx graph instance.
-
-    :param nodes: List of sentences
+def sort_top(scores, ratio=0.33):
     """
+    Get items with highest score
+    args:
+        ratio: float (0,1], fraction of items to choose
+    returns:
+        list of items
+    """
+    results = sorted(scores, key=scores.get,reverse=True)
+    return results[:int(ratio * len(results))]
 
+def get_word_list(sentence, skipwords=[], plural_to_singular={}):
+    """
+    Tokenizes string and converts words from plural to singular
+    args:
+        sentence: string
+        skipwords: words to skip
+        plural_to_singular: dict of (plural, singular) items
+    returns:
+        list of words
+    """
+    word_tokens = []
+    for w in nltk.word_tokenize(sentence):
+        if len(w) > 1 and w not in skipwords:
+            if w in plural_to_singular.keys():
+                word_tokens.append(plural_to_singular[w])
+            else:
+                word_tokens.append(w)
+    tagged = nltk.pos_tag(word_tokens)
+    word_list = filter_for_tags(tagged)
+    return word_list
+
+def build_graph(sentences, skipwords=[], plural_to_singular={}, compound_words=[]):
+    """
+    args: 
+        sentences: list of strings
+        skipwords: words to skip
+        plural_to_singular: dict of (plural, singular) items
+        compound_words: list of tuples to replace consecutive words if found
+    returns: 
+        directed weighted graph
+    """
     unique_word_set = set([])
     edges = {}
 
     for s in sentences:
         # tokenize the text using nltk
-        word_tokens = nltk.word_tokenize(s)
-
-        # assign POS tags to the words in the text
-        tagged = nltk.pos_tag(word_tokens)
-        word_list = filter_for_tags(tagged)
+        word_tokens = get_word_list(s, skipwords, plural_to_singular)
+        
+        word_list = []
+        i = 0
+        while i < len(word_tokens) - 1:
+            if (word_tokens[i], word_tokens[i+1]) in compound_words:
+                word_list.append(word_tokens[i] + ' ' + word_tokens[i+1])
+                i += 2
+            else:
+                word_list.append(word_tokens[i])
+                i += 1
+        
         word_list.sort()
 
         for word in word_list:
@@ -49,9 +85,9 @@ def build_graph(sentences):
 
         for pair in itertools.combinations(word_list, 2):
             if pair in edges.keys():
-                edges[pair] = 1
-            else:
                 edges[pair] += 1
+            else:
+                edges[pair] = 1
 
     gr = nx.Graph()  # initialize an undirected graph
     gr.add_nodes_from(unique_word_set)
@@ -59,64 +95,98 @@ def build_graph(sentences):
     for key, weight in edges.items():
         gr.add_edge(key[0], key[1], weight=weight)
 
-    return gr, unique_word_set
+    return gr.to_directed()
 
-
-def extract_key_phrases(text):
-    """Return a set of key phrases.
-
-    :param text: A string.
+def get_scores(sentences, skipwords=[], plural_to_singular={}, compound_words=[]):
     """
+    Computes scores based on PageRank algorithm
+    args:
+        sentences: list of strings
+        skipwords: words to skip
+        plural_to_singular: dict of (plural, singular) items
+        compound_words: list of tuples to replace consecutive words if found
+    returns:
+        dict of (term, score) items
+    """
+    gr = build_graph(sentences, skipwords, plural_to_singular, compound_words)
+    calculated_page_rank = nx.pagerank(gr, weight='weight')
+    return calculated_page_rank
+
+def get_phrases(textlist, keywords, k=2):
+    """
+    Finds valid phrases (groups of consecutive keywords) of length k
+    args:
+        textlist: tokenized list of words
+        keywords: valid keywords
+        k: phrase length
+    returns:
+        list of tuples
+        phrase freq: (phrase tuple, freq)
+        keyword freq: (keyword, freq)
+    """
+    phrase_set = set([])
+    phrase_freq = {}
+    keyword_freq = {}
+
+    i = k-1
+    while i < len(textlist):
+        consecutive = tuple(textlist[i-k+1:i+1])
+        if all([word in keywords for word in consecutive]):
+            phrase_set.add(consecutive)
+            if consecutive in phrase_freq.keys():
+                phrase_freq[consecutive] += 1
+            else:
+                phrase_freq[consecutive] = 1
+        i += 1
+        
+    keyword_freq = {}
+    for word in textlist:
+        if word in keywords:
+            if word in keyword_freq.keys():
+                keyword_freq[word] += 1
+            else:
+                keyword_freq[word] = 1
+                
+    return list(phrase_set), phrase_freq, keyword_freq
+
+def extract_top_terms(text, common_words=[], plural_to_singular={}):
+    """
+    Finds the top terms. This can be either single words or bigrams.
+    Top keywords are first found using PageRank. Then we find the top bigrams that
+    comprise of keywords. 
     
-    # this will be used to determine adjacent words in order to construct
-    # keyphrases with two words
-    sentences = text.split('. ')
-    graph, unique_word_set = build_graph(sentences)
+    Finally we re-run PageRank and replace consecutive words with bigrams
+    when applicable.
 
-    # pageRank - initial value of 1.0, error tolerance of 0,0001,
-    calculated_page_rank = nx.pagerank(graph, weight='weight')
-    # print(calculated_page_rank)
+    args:
+        text: string
+        common_words: list of common words
+        plural_to_singular: dict of (plural, singular) items
+    returns:
+        list of strings
+    """
+    stopwords = nltk.corpus.stopwords.words('english')
 
-    # most important words in ascending order of importance
-    all_keyphrases = sorted(calculated_page_rank, key=calculated_page_rank.get,
-                        reverse=True)
-    for kp in all_keyphrases[:100]:
-        print(kp, calculated_page_rank[kp])
+    sentences = nltk.sent_tokenize(text)
+    skipwords = stopwords+common_words
+    # Keywords are unigrams
+    keyword_scores = get_scores(sentences, skipwords, plural_to_singular)
+    top_keywords = sort_top(keyword_scores, ratio=0.1)
 
-    # the number of keyphrases returned will be relative to the size of the
-    # text (a third of the number of vertices)
-    one_third = len(word_set_list) // 3
-    keyphrases = all_keyphrases[0:one_third + 1]
+    # Get phrases (n-grams where n > 1, n=2 in this case)
+    textlist = nltk.word_tokenize(text)
+    phrases, phrase_freq, keyword_freq = get_phrases(textlist, top_keywords)
 
-    # take keyphrases with multiple words into consideration as done in the
-    # paper - if two words are adjacent in the text and are selected as
-    # keywords, join them together
-    modified_key_phrases = set([])
-    # keeps track of individual keywords that have been joined to form a
-    # keyphrase
-    dealt_with = set([])
-    i = 0
-    j = 1
-    while j < len(textlist):
-        first = textlist[i]
-        second = textlist[j]
-        if first in keyphrases and second in keyphrases:
-            keyphrase = first + ' ' + second
-            modified_key_phrases.add(keyphrase)
-            dealt_with.add(first)
-            dealt_with.add(second)
-        else:
-            if first in keyphrases and first not in dealt_with:
-                modified_key_phrases.add(first)
+    # Get phrase scores
+    phrase_scores = {}
+    for p in phrases:
+        phrase_scores[p] = np.prod([phrase_freq[p] / keyword_freq[w] for w in p])
 
-            # if this is the last word in the text, and it is a keyword, it
-            # definitely has no chance of being a keyphrase at this point
-            if j == len(textlist) - 1 and second in keyphrases and \
-                    second not in dealt_with:
-                modified_key_phrases.add(second)
+    top_phrases = sort_top(phrase_scores, ratio=0.1)
 
-        i = i + 1
-        j = j + 1
+    # Terms can be either keywords or phrases
+    term_scores = get_scores(sentences, skipwords, plural_to_singular, top_phrases)
+    top_terms = sort_top(term_scores)
 
-    return modified_key_phrases, keyphrases
-
+    return top_terms
+    
