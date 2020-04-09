@@ -1,7 +1,8 @@
-import requests
+from textrank import extract_key_phrases
 
-URL = "https://machinelearningmastery.com/tensorflow-tutorial-deep-learning-with-tf-keras/"
+with open('sample.txt', 'r') as f:
+    text = f.read()
 
-url = requests.get(URL, headers={'User-Agent': 'Mozilla/5.0'})
-htmltext = url.text
-print(htmltext)
+modified_keyphrases, all_keyphrases = extract_key_phrases(text)
+
+print(all_keyphrases[:20])
