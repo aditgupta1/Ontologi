@@ -1,0 +1,90 @@
+Currently, the most famous deep learning library in the world is Google's TensorFlow. Google product uses machine learning in all of its products to improve the search engine, translation, image captioning or recommendations. 
+To give a concrete example, Google users can experience a faster and more refined the search with AI. If the user types a keyword a the search bar, Google provides a recommendation about what could be the next word. 
+ 
+Google wants to use machine learning to take advantage of their massive datasets to give users the best experience. Three different groups use machine learning: 
+They can all use the same toolset to collaborate with each other and improve their efficiency. 
+Google does not just have any data; they have the world's most massive computer, so Tensor Flow was built to scale. TensorFlow is a library developed by the Google Brain Team to accelerate machine learning and deep neural network research. 
+It was built to run on multiple CPUs or GPUs and even mobile operating systems, and it has several wrappers in several languages like Python, C++ or Java. 
+In this tutorial, you will learn 
+A couple of years ago, deep learning started to outperform all other machine learning algorithms when giving a massive amount of data. Google saw it could use these deep neural networks to improve its services: 
+They build a framework called 
+ to let researchers and developers work together on an AI model. Once developed and scaled, it allows lots of people to use it. 
+It was first made public in late 2015, while the first stable version appeared in 2017. It is open source under Apache Open Source license. You can use it, modify it and redistribute the modified version for a fee without paying anything to Google. 
+Tensorflow architecture works in three parts: 
+It is called Tensorflow because it takes input as a multi-dimensional array, also known as 
+. You can construct a sort of 
+ of operations (called a Graph) that you want to perform on that input. The input goes in at one end, and then it flows through this system of multiple operations and comes out the other end as output. 
+This is why it is called TensorFlow because the tensor goes in it flows through a list of operations, and then it comes out the other side. 
+TensorFlow hardware, and software requirements can be classified into
+Development Phase: This is when you train the mode. Training is usually done on your Desktop or laptop. 
+Run Phase or Inference Phase: Once training is done Tensorflow can be run on many different platforms. You can run it on 
+You can train it on multiple machines then you can run it on a different machine, once you have the trained model. 
+The model can be trained and used on GPUs as well as CPUs. GPUs were initially designed for video games. In late 2010, Stanford researchers found that GPU was also very good at matrix operations and algebra so that it makes them very fast for doing these kinds of calculations. Deep learning relies on a lot of matrix multiplication. TensorFlow is very fast at computing the matrix multiplication because it is written in C++. Although it is implemented in C++, TensorFlow can be accessed and controlled by other languages mainly, Python. 
+Finally, a significant feature of TensorFlow is the TensorBoard. The TensorBoard enables to monitor graphically and visually what TensorFlow is doing. 
+ 
+Tensorflow's name is directly derived from its core framework: 
+. In Tensorflow, all the computations involve tensors. A tensor is a 
+ or 
+ of n-dimensions that represents all types of data. All values in a tensor hold identical data type with a known (or partially known) 
+. The shape of the data is the dimensionality of the matrix or array. 
+A tensor can be originated from the input data or the result of a computation. In TensorFlow, all the operations are conducted inside a 
+. The graph is a set of computation that takes place successively. Each operation is called an 
+ and are connected to each other. 
+The graph outlines the ops and connections between the nodes. However, it does not display the values. The edge of the nodes is the tensor, i.e., a way to populate the operation with data. 
+ 
+TensorFlow makes use of a graph framework. The graph gathers and describes all the series computations done during the training. The graph has lots of advantages: 
+TensorFlow is the best library of all because it is built to be accessible for everyone. Tensorflow library incorporates different API to built at scale deep learning architecture like CNN or RNN. TensorFlow is based on graph computation; it allows the developer to visualize the construction of the neural network with Tensorboad. This tool is helpful to debug the program. Finally, Tensorflow is built to be deployed at scale. It runs on CPU and GPU. 
+Tensorflow attracts the largest popularity on GitHub compare to the other deep learning framework. 
+Currently, TensorFlow 1.10 has a built-in API for: 
+In the first two line of code, we have imported tensorflow as tf. With Python, it is a common practice to use a short name for a library. The advantage is to avoid to type the full name of the library when we need to use it. For instance, we can import tensorflow as tf, and call tf when we want to use a tensorflow function 
+Let 's practice the elementary workflow of Tensorflow with a simple example. Let 's create a computational graph that multiplies two numbers together. 
+ During the example, we will multiply X_1 and X_2 together. Tensorflow will create a node to connect the operation. In our example, it is called multiply. When the graph is determined, Tensorflow computational engines will multiply together X_1 and X_2. 
+ 
+Finally, we will run a TensorFlow session that will run the computational graph with the values of X_1 and X_2 and print the result of the multiplication. 
+Let 's define the X_1 and X_2 input nodes. When we create a node in Tensorflow, we have to choose what kind of node to create. The X1 and X2 nodes will be a placeholder node. The placeholder assigns a new value each time we make a calculation. We will create them as a TF dot placeholder node. 
+ 
+When we create a placeholder node, we have to pass in the data type will be adding numbers here so we can use a floating-point data type, let's use tf.float32. We also need to give this node a name. This name will show up when we look at the graphical visualizations of our model. Let's name this node X_1 by passing in a parameter called name with a value of X_1 and now let's define X_2 the same way. X_2. 
+ 
+Now we can define the node that does the multiplication operation. In Tensorflow we can do that by creating a tf.multiply node. 
+We will pass in the X_1 and X_2 nodes to the multiplication node. It tells tensorflow to link those nodes in the computational graph, so we are asking it to pull the values from x and y and multiply the result. Let's also give the multiplication node the name multiply. It is the entire definition for our simple computational graph. 
+ 
+To execute operations in the graph, we have to create a session. In Tensorflow, it is done by tf.Session(). Now that we have a session we can ask the session to run operations on our computational graph by calling session. To run the computation, we need to use run. 
+When the addition operation runs, it is going to see that it needs to grab the values of the X_1 and X_2 nodes, so we also need to feed in values for X_1 and X_2. We can do that by supplying a parameter called feed_dict. We pass the value 1,2,3 for X_1 and 4,5,6 for X_2. 
+We print the results with print(result). We should see 4, 10 and 18 for 1x4, 2x5 and 3x6 
+The first step before training a machine learning algorithm is to load the data. There is two commons way to load data: 
+1. Load data into memory: It is the simplest method. You load all your data into memory as a single array. You can write a Python code. This lines of code are unrelated to Tensorflow. 
+2. Tensorflow data pipeline. Tensorflow has built-in API that helps you to load the data, perform the operation and feed the machine learning algorithm easily. This method works very well especially when you have a large dataset. For instance, image records are known to be enormous and do not fit into memory. The data pipeline manages the memory by itself 
+ 
+ 
+If your dataset is not too big, i.e., less than 10 gigabytes, you can use the first method. The data can fit into the memory. You can use a famous library called Pandas to import CSV files. You will learn more about pandas in the next tutorial. 
+ 
+The second method works best if you have a large dataset. For instance, if you have a dataset of 50 gigabytes, and your computer has only 16 gigabytes of memory then the machine will crash. 
+In this situation, you need to build a Tensorflow pipeline. The pipeline will load the data in batch, or small chunk. Each batch will be pushed to the pipeline and be ready for the training. Building a pipeline is an excellent solution because it allows you to use parallel computing. It means Tensorflow will train the model across multiple CPUs. It fosters the computation and permits for training powerful neural network. 
+You will see in the next tutorials on how to build a significant pipeline to feed your neural network. 
+In a nutshell, if you have a small dataset, you can load the data in memory with Pandas library. 
+If you have a large dataset and you want to make use of multiple CPUs, then you will be more comfortable to work with Tensorflow pipeline. 
+In the example before, we manually add three values for X_1 and X_2. Now we will see how to load data to Tensorflow. 
+ 
+First of all, let's use numpy library to generate two random values. 
+[[0.8835775 0.23766977]] 
+ 
+Like in the previous example, we create a placeholder with the name X. We need to specify the shape of the tensor explicitly. In case, we will load an array with only two values. We can write the shape as shape=[1,2] 
+ 
+next, we need to define the Dataset where we can populate the value of the placeholder x. We need to use the method tf.data.Dataset.from_tensor_slices 
+ 
+In step four, we need to initialize the pipeline where the data will flow. We need to create an iterator with make_initializable_iterator. We name it iterator. Then we need to call this iterator to feed the next batch of data, get_next. We name this step get_next. Note that in our example, there is only one batch of data with only two values. 
+ 
+The last step is similar to the previous example. We initiate a session, and we run the operation iterator. We feed the feed_dict with the value generated by numpy. These two value will populate the placeholder x. Then we run get_next to print the result. 
+TensorFlow is the most famous deep learning library these recent years. A practitioner using TensorFlow can build any deep learning structure, like CNN, RNN or simple artificial neural network. 
+TensorFlow is mostly used by academics, startups, and large companies. Google uses TensorFlow in almost all Google daily products including Gmail, Photo and Google Search Engine. 
+Google Brain team's developed TensorFlow to fill the gap between researchers and products developers. In 2015, they made TensorFlow public; it is rapidly growing in popularity. Nowadays, TensorFlow is the deep learning library with the most repositories on GitHub. 
+Practitioners use Tensorflow because it is easy to deploy at scale. It is built to work in the cloud or on mobile devices like iOs and Android. 
+Tensorflow works in a session. Each session is defined by a graph with different computations. A simple example can be to multiply to number. In Tensorflow, three steps are required: 
+One common practice in Tensorflow is to create a pipeline to load the data. If you follow these five steps, you'll be able to load data to TensorFLow 
+ 
+What is Data warehouse? A data warehouse is a technique for collecting and managing data from...
+What is Business Intelligence Tool? BUSINESS INTELLIGENCE (BI) tools are software that collects,...
+Fact Table: A fact table is a primary table in a dimensional model. A Fact Table contains...
+Data can be organized and simplified by using various techniques in Tableau. We will use the...
+Tableau is a pioneering data visualization tool. Tableau connects to almost any data source like...
+1) How do you define Teradata? Give some of the primary characteristics of the same. Teradata is...

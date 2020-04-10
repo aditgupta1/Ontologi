@@ -62,6 +62,8 @@ def build_graph(sentences, skipwords=[], plural_to_singular={}, compound_words=[
     """
     unique_word_set = set([])
     edges = {}
+    max_compound_len = max([len(x) for x in compound_words] + [1,])
+    # print(max_compound_len)
 
     for s in sentences:
         # tokenize the text using nltk
@@ -69,15 +71,22 @@ def build_graph(sentences, skipwords=[], plural_to_singular={}, compound_words=[
         
         word_list = []
         i = 0
-        while i < len(word_tokens) - 1:
-            if (word_tokens[i], word_tokens[i+1]) in compound_words:
-                word_list.append(word_tokens[i] + ' ' + word_tokens[i+1])
-                i += 2
-            else:
+        while i < len(word_tokens):
+            l = max_compound_len
+            while l > 1:
+                if i <= len(word_tokens) - l and \
+                        tuple(word_tokens[i:i+l]) in compound_words:
+                    word_list.append(' '.join(word_tokens[i:i+l]))
+                    i += l
+                    break
+                l -= 1
+
+            if l == 1:
                 word_list.append(word_tokens[i])
                 i += 1
         
         word_list.sort()
+        print(word_list)
 
         for word in word_list:
             if word not in unique_word_set:
@@ -112,7 +121,7 @@ def get_scores(sentences, skipwords=[], plural_to_singular={}, compound_words=[]
     calculated_page_rank = nx.pagerank(gr, weight='weight')
     return calculated_page_rank
 
-def get_phrases(textlist, keywords, k=2):
+def get_phrase_scores(textlist, keywords, k=2):
     """
     Finds valid phrases (groups of consecutive keywords) of length k
     args:
@@ -146,8 +155,16 @@ def get_phrases(textlist, keywords, k=2):
                 keyword_freq[word] += 1
             else:
                 keyword_freq[word] = 1
+
+    # Get phrase scores
+    phrases = list(phrase_set)
+    phrase_scores = {}
+    for p in phrases:
+        score = np.prod([phrase_freq[p] / keyword_freq[w] for w in p])
+        # Normalize score
+        phrase_scores[p] = np.power(score, 1/len(p))
                 
-    return list(phrase_set), phrase_freq, keyword_freq
+    return phrase_scores
 
 def extract_top_terms(text, common_words=[], plural_to_singular={}):
     """
@@ -171,21 +188,25 @@ def extract_top_terms(text, common_words=[], plural_to_singular={}):
     skipwords = stopwords+common_words
     # Keywords are unigrams
     keyword_scores = get_scores(sentences, skipwords, plural_to_singular)
-    top_keywords = sort_top(keyword_scores, ratio=0.1)
+    print('Keywords found:' , len(keyword_scores.keys()))
+    top_keywords = sort_top(keyword_scores, ratio=0.25)
+    # print(top_keywords)
 
     # Get phrases (n-grams where n > 1, n=2 in this case)
     textlist = nltk.word_tokenize(text)
-    phrases, phrase_freq, keyword_freq = get_phrases(textlist, top_keywords)
 
-    # Get phrase scores
-    phrase_scores = {}
-    for p in phrases:
-        phrase_scores[p] = np.prod([phrase_freq[p] / keyword_freq[w] for w in p])
+    bigram_scores = get_phrase_scores(textlist, top_keywords, k=2)
+    print('Bigrams found:' , len(bigram_scores.keys()))
+    top_bigrams = sort_top(bigram_scores, ratio=1)
+    print([(w, bigram_scores[w]) for w in top_bigrams])
 
-    top_phrases = sort_top(phrase_scores, ratio=0.1)
+    trigram_scores = get_phrase_scores(textlist, top_keywords, k=3)
+    print('Trigrams found:' , len(trigram_scores.keys()))
+    top_trigrams = sort_top(trigram_scores, ratio=1)
+    # print(top_trigrams)
 
     # Terms can be either keywords or phrases
-    term_scores = get_scores(sentences, skipwords, plural_to_singular, top_phrases)
+    term_scores = get_scores(sentences, skipwords, plural_to_singular, top_bigrams+top_trigrams)
     top_terms = sort_top(term_scores)
 
     return top_terms

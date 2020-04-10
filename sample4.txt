@@ -1,0 +1,34 @@
+Welcome to part two of Deep Learning with Neural Networks and TensorFlow, and part 44 of the Machine Learning tutorial series. In this tutorial, we are going to be covering some basics on what TensorFlow is, and how to begin using it.
+Libraries like TensorFlow and Theano are not simply deep learning libraries, they are libraries *for* deep learning. They are actually just number-crunching libraries, much like Numpy is. The difference is, however, a package like TensorFlow allows us to perform specific machine learning number-crunching operations like derivatives on huge matricies with large efficiency. We can also easily distribute this processing across our CPU cores, GPU cores, or even multiple devices like multiple GPUs. But that's not all! We can even distribute computations across a distributed network of computers with TensorFlow. So, while TensorFlow is mainly being used with machine learning right now, it actually stands to have uses in other fields, since really it is just a massive array manipulation library.
+What is a tensor? Up to this point in the machine learning series, we've been working mainly with vectors (numpy arrays), and a tensor can be a vector. Most simply, a tensor is an array-like object, and, as you've seen, an array can hold your matrix, your vector, and really even a scalar.
+At this point, we just simply need to translate our machine learning problems into functions on tensors, which is possible with just about every single ML algorithm. Consider the neural network. What does a neural network break down into? 
+We have data (
+), weights (
+), and thresholds (
+). Are all of these tensors? 
+ will be the dataset (an array), so that's a tensor. The weights are also an array of weight values, so they're tensors too. Thresholds? Same as weights. Thus, our neural network is indeed a function of 
+,
+, and 
+, or 
+, so we are all set and can certainly use TensorFlow, but how?
+TensorFlow works by first defining and describing our model in abstract, and then, when we are ready, we make it a reality in the session. The description of the model is what is known as your "Computation Graph" in TensorFlow terms. Let's play with a simple example. First, let's construct the graph:
+So we have some values. Now, we can do things with those values, such as multiplication:
+Notice that the output is just an abstract tensor still. No actual calculations have been run, only operations created. Each operation, or "op," in our computation graph is a "node" in the graph.
+To actually see the result, we need to run the session. Generally, you build the graph first, then you "launch" the graph:
+We can also assign the output from the session to a variable:
+When you are finished with a session, you need to close it in order to free up the resources that were used:
+After closing, you can still reference that 
+ variable, but you cannot do something like:
+...which would just return an error. Another option you have is to utilize Python's 
+ statement:
+If you are not familiar with what this does, basically, it will use the session for the block of code following the statement, and then automatically close the session when done, the same way it works if you open a file with the 
+ statement.
+You can also use TensorFlow on multiple devices, and even multiple distributed machines. An example for running some computations on a specific GPU would be something like:
+Code from: 
+. The 
+ is a matrix multiplication function.
+The above code would run the calcuation on the 2nd system GPU. If you installed the CPU version with me, then this isn't currently an option, but you should still be aware of the possibility down the line. The GPU version of TensorFlow requires CUDA to be properly set up (along with needing a CUDA-enabled GPU). I have a few CUDA enabled GPUs, and would like to eventually cover their use as well, but that's for another day!
+Now that we have the basics of TensorFlow down, I invite you down the rabbit hole of creating a Deep Neural Network in the next tutorial. If you need to install TensorFlow, the installation process is very simple if you are on Mac or Linux. On Windows, not so much. The next tutorial is optional, and it is just us installing TensorFlow on a Windows machine.
+The next tutorial: 
+Contact: Harrison@pythonprogramming.net.
+Programming is a superpower.
