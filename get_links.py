@@ -2,7 +2,8 @@ from googlesearch import search
 
 def get_query_links():
 
-	query = input("Enter Your Query: ")
+	# query = input("Enter Your Query: ")
+	query = 'tensorflow'
 
 	urls = []
 

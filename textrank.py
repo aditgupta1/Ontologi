@@ -85,8 +85,8 @@ def build_graph(sentences, skipwords=[], plural_to_singular={}, compound_words=[
                 word_list.append(word_tokens[i])
                 i += 1
         
+        # print(word_list)
         word_list.sort()
-        print(word_list)
 
         for word in word_list:
             if word not in unique_word_set:
@@ -166,7 +166,7 @@ def get_phrase_scores(textlist, keywords, k=2):
                 
     return phrase_scores
 
-def extract_top_terms(text, common_words=[], plural_to_singular={}):
+def extract_top_terms(text, skipwords=[], plural_to_singular={}, ratio=0.33):
     """
     Finds the top terms. This can be either single words or bigrams.
     Top keywords are first found using PageRank. Then we find the top bigrams that
@@ -177,15 +177,13 @@ def extract_top_terms(text, common_words=[], plural_to_singular={}):
 
     args:
         text: string
-        common_words: list of common words
+        skipwords: list of common words and stopwords
         plural_to_singular: dict of (plural, singular) items
     returns:
         list of strings
     """
-    stopwords = nltk.corpus.stopwords.words('english')
 
     sentences = nltk.sent_tokenize(text)
-    skipwords = stopwords+common_words
     # Keywords are unigrams
     keyword_scores = get_scores(sentences, skipwords, plural_to_singular)
     print('Keywords found:' , len(keyword_scores.keys()))
@@ -198,16 +196,16 @@ def extract_top_terms(text, common_words=[], plural_to_singular={}):
     bigram_scores = get_phrase_scores(textlist, top_keywords, k=2)
     print('Bigrams found:' , len(bigram_scores.keys()))
     top_bigrams = sort_top(bigram_scores, ratio=1)
-    print([(w, bigram_scores[w]) for w in top_bigrams])
+    # print([(w, bigram_scores[w]) for w in top_bigrams])
 
-    trigram_scores = get_phrase_scores(textlist, top_keywords, k=3)
-    print('Trigrams found:' , len(trigram_scores.keys()))
-    top_trigrams = sort_top(trigram_scores, ratio=1)
+    # trigram_scores = get_phrase_scores(textlist, top_keywords, k=3)
+    # print('Trigrams found:' , len(trigram_scores.keys()))
+    # top_trigrams = sort_top(trigram_scores, ratio=1)
     # print(top_trigrams)
 
     # Terms can be either keywords or phrases
-    term_scores = get_scores(sentences, skipwords, plural_to_singular, top_bigrams+top_trigrams)
-    top_terms = sort_top(term_scores)
+    term_scores = get_scores(sentences, skipwords, plural_to_singular, top_bigrams)
+    top_terms = sort_top(term_scores, ratio=ratio)
 
     return top_terms
     
