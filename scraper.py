@@ -10,7 +10,6 @@ class TestSpider(scrapy.Spider):
     name = "test"
 
     start_urls = get_links.get_query_links()
-    # start_urls = ['https://machinelearningmastery.com/tensorflow-tutorial-deep-learning-with-tf-keras/']
 
     def __init__(self):
         super()
