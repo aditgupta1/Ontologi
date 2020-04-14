@@ -25,6 +25,7 @@ class TestSpider(scrapy.Spider):
         paragraphs = response.xpath('//p/text()').extract()
         # Initialize parser with terms
         self.parser.extract_terms('\n'.join(paragraphs))
+        print(self.parser.terms)
 
         print('Building document heirarchy...')
         headings = []
@@ -88,10 +89,11 @@ class TestSpider(scrapy.Spider):
         idx = np.argmax([len(gr.nodes) for gr in trees])
         filepath = f'images/{self.counter}.png'
         _plot_tree(trees[idx], heading_levels[idx], savepath=filepath)
-        self.counter += 1
-
+        
         with open('images.txt', 'a', encoding='utf-8') as f:
             f.write(response.url + '\n')
+
+        self.counter += 1
 
 def _extract_headings(response, headers=[],
                     heading_tags=[f'h{i}' for i in range(1,7)]):
@@ -112,10 +114,12 @@ def _extract_headings(response, headers=[],
         # print(tag)
 
         if tag in heading_tags:
-            text = child.xpath('text()')
+            text = child.xpath('.//text()')
+            # print(tag, ' '.join(child.xpath('.//text()').extract()))
+            # print()
             # print('match', child, )
             if len(text) > 0:
-                headers.append( (int(tag[1]), text[0].extract()) )
+                headers.append( (int(tag[1]), ' '.join(text.extract())) )
         else:
             _extract_headings(child, headers, heading_tags)
 

@@ -29,7 +29,7 @@ class Parser(object):
         returns:
             list of top terms
         """
-        self.terms = extract_top_terms(text, skipwords=self.skipwords, 
+        self.terms = extract_top_terms(text.lower(), skipwords=self.skipwords, 
                                 plural_to_singular=self.plural_to_singular, 
                                 ratio=ratio)
         self.max_compound_len = max([len(x) for x in self.terms] + [1,])
