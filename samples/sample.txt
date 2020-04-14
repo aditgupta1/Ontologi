@@ -1,586 +1,68 @@
+Last Updated on   February 10, 2020 Predictive modeling with deep learning is a skill that modern developers need to know. TensorFlow is the premier open-source deep learning framework developed and maintained by Google. Although using TensorFlow directly can be challenging, the modern tf.keras API beings the simplicity and ease of use of Keras to the TensorFlow project. Using tf.keras allows you to design, fit, evaluate, and use deep learning models to make predictions in just a few lines of code. It makes common deep learning tasks, such as classification and regression predictive modeling, accessible to average developers looking to get things done. In this tutorial, you will discover a step-by-step guide to developing deep learning models in TensorFlow using the tf.keras API. After completing this tutorial, you will know: This is a large tutorial, and a lot of fun. You might want to bookmark it. The examples are small and focused; you can finish this tutorial in about 60 minutes. Letâ€™s get started. How to Develop Deep Learning Models With tf.keras Photo by  Stephen Harlan , some rights reserved. This tutorial is designed to be your complete introduction to tf.keras for your deep learning project. The focus is on using the API for common deep learning model development tasks; we will not be diving into the math and theory of deep learning. For that, I recommend  starting with this excellent book . The best way to learn deep learning in python is by doing. Dive in. You can circle back for more theory later. I have designed each code example to use best practices and to be standalone so that you can copy and paste it directly into your project and adapt it to your specific needs. This will give you a massive head start over trying to figure out the API from official documentation alone. It is a large tutorial and as such, it is divided into five parts; they are: Work through the tutorial at your own pace. You do not need to understand everything (at least not right now) . Your goal is to run through the tutorial end-to-end and get results. You do not need to understand everything on the first pass. List down your questions as you go. Make heavy use of the API documentation to learn about all of the functions that youâ€™re using. You do not need to know the math first . Math is a compact way of describing how algorithms work, specifically tools from  linear algebra ,  probability , and  statistics . These are not the only tools that you can use to learn how algorithms work. You can also use code and explore algorithm behavior with different inputs and outputs. Knowing the math will not tell you what algorithm to choose or how to best configure it. You can only discover that through careful, controlled experiments. You do not need to know how the algorithms work . It is important to know about the limitations and how to configure deep learning algorithms. But learning about algorithms can come later. You need to build up this algorithm knowledge slowly over a long period of time. Today, start by getting comfortable with the platform. You do not need to be a Python programmer . The syntax of the Python language can be intuitive if you are new to it. Just like other languages, focus on function calls (e.g. function()) and assignments (e.g. a = â€œbâ€). This will get you most of the way. You are a developer, so you know how to pick up the basics of a language really fast. Just get started and dive into the details later. You do not need to be a deep learning expert . You can learn about the benefits and limitations of various algorithms later, and there are plenty of posts that you can read later to brush up on the steps of a deep learning project and the importance of evaluating model skill using cross-validation. In this section, you will discover what tf.keras is, how to install it, and how to confirm that it is installed correctly. Keras  is an open-source deep learning library written in Python. The project was started in 2015 by  Francois Chollet . It quickly became a popular framework for developers, becoming one of, if not the most, popular deep learning libraries. During the period of 2015-2019, developing deep learning models using mathematical libraries like TensorFlow, Theano, and PyTorch was cumbersome, requiring tens or even hundreds of lines of code to achieve the simplest tasks. The focus of these libraries was on research, flexibility, and speed, not ease of use. Keras was popular because the API was clean and simple, allowing standard deep learning models to be defined, fit, and evaluated in just a few lines of code. A secondary reason Keras took-off was because it allowed you to use any one among the range of popular deep learning mathematical libraries as the backend (e.g. used to perform the computation), such as  TensorFlow ,  Theano , and later,  CNTK . This allowed the power of these libraries to be harnessed (e.g. GPUs) with a very clean and simple interface. In 2019, Google released a new version of their TensorFlow deep learning library (TensorFlow 2) that integrated the Keras API directly and promoted this interface as the default or standard interface for deep learning development on the platform. This integration is commonly referred to as the  tf.keras  interface or API (â€œ tf â€ is short for â€œ TensorFlow â€œ). This is to distinguish it from the so-called standalone Keras open source project. The Keras API implementation in Keras is referred to as â€œ tf.keras â€ because this is the Python idiom used when referencing the API. First, the TensorFlow module is imported and named â€œ tf â€œ; then, Keras API elements are accessed via calls to  tf.keras ; for example: I generally donâ€™t use this idiom myself; I donâ€™t think it reads cleanly. Given that TensorFlow was the de facto standard backend for the Keras open source project, the integration means that a single library can now be used instead of two separate libraries. Further, the standalone Keras project now recommends all future Keras development use the  tf.keras  API. At this time, we recommend that Keras users who use multi-backend Keras with the TensorFlow backend switch to tf.keras in TensorFlow 2.0. tf.keras is better maintained and has better integration with TensorFlow features (eager execution, distribution support and other). â€”  Keras Project Homepage , Accessed December 2019. Before installing TensorFlow, ensure that you have Python installed, such as Python 3.6 or higher. If you donâ€™t have Python installed, you can install it using Anaconda. This tutorial will show you how: There are many ways to install the TensorFlow open-source deep learning library. The most common, and perhaps the simplest, way to install TensorFlow on your workstation is by using  pip . For example, on the command line, you can type: If you prefer to use an installation method more specific to your platform or package manager, you can see a complete list of installation instructions here: There is no need to set up the GPU now. All examples in this tutorial will work just fine on a modern CPU. If you want to configure TensorFlow for your GPU, you can do that after completing this tutorial. Donâ€™t get distracted! Once TensorFlow is installed, it is important to confirm that the library was installed successfully and that you can start using it. Donâ€™t skip this step . If TensorFlow is not installed correctly or raises an error on this step, you wonâ€™t be able to run the examples later. Create a new file called  versions.py  and copy and paste the following code into the file. Save the file, then open your  command line  and change directory to where you saved the file. Then type: You should then see output like the following: This confirms that TensorFlow is installed correctly and that we are all using the same version. What version did you get?Â  
+Post your output in the comments below. This also shows you how to run a Python script from the command line. I recommend running all code from the command line in this manner, and  not from a notebook or an IDE . Sometimes when you use the  tf.keras  API, you may see warnings printed. This might include messages that your hardware supports features that your TensorFlow installation was not configured to use. Some examples on my workstation include: They are not your fault.  You did nothing wrong . These are information messages and they will not prevent the execution of your code. You can safely ignore messages of this type for now. Itâ€™s an intentional design decision made by the TensorFlow team to show these warning messages. A downside of this decision is that it confuses beginners and it trains developers to ignore all messages, including those that potentially may impact the execution. Now that you know what tf.keras is, how to install TensorFlow, and how to confirm your development environment is working, letâ€™s look at the life-cycle of deep learning models in TensorFlow. In this section, you will discover the life-cycle for a deep learning model and the two tf.keras APIs that you can use to define models. A model has a life-cycle, and this very simple knowledge provides the backbone for both modeling a dataset and understanding the tf.keras API. The five steps in the life-cycle are as follows: Letâ€™s take a closer look at each step in turn. Defining the model requires that you first select the type of model that you need and then choose the architecture or network topology. From an API perspective, this involves defining the layers of the model, configuring each layer with a number of nodes and activation function, and connecting the layers together into a cohesive model. Models can be defined either with the Sequential API or the Functional API, and we will take a look at this in the next section. Compiling the model requires that you first select a loss function that you want to optimize, such as mean squared error or cross-entropy. It also requires that you select an algorithm to perform the optimization procedure, typically stochastic gradient descent, or a modern variation, such as Adam. It may also require that you select any performance metrics to keep track of during the model training process. From an API perspective, this involves calling a function to compile the model with the chosen configuration, which will prepare the appropriate data structures required for the efficient use of the model you have defined. The optimizer can be specified as a string for a known optimizer class, e.g. â€˜ sgd â€˜ for stochastic gradient descent, or you can configure an instance of an optimizer class and use that. For a list of supported optimizers, see this: The three most common loss functions are: For a list of supported loss functions, see: Metrics are defined as a list of strings for known metric functions or a list of functions to call to evaluate predictions. For a list of supported metrics, see: Fitting the model requires that you first select the training configuration, such as the number of epochs (loops through the training dataset) and the batch size (number of samples in an epoch used to estimate model error). Training applies the chosen optimization algorithm to minimize the chosen loss function and updates the model using the backpropagation of error algorithm. Fitting the model is the slow part of the whole process and can take seconds to hours to days, depending on the complexity of the model, the hardware youâ€™re using, and the size of the training dataset. From an API perspective, this involves calling a function to perform the training process. This function will block (not return) until the training process has finished. For help on how to choose the batch size, see this tutorial: While fitting the model, a progress bar will summarize the status of each epoch and the overall training process. This can be simplified to a simple report of model performance each epoch by setting the â€œ verbose â€ argument to 2. All output can be turned off during training by setting â€œ verbose â€ to 0. Evaluating the model requires that you first choose a holdout dataset used to evaluate the model. This should be data not used in the training process so that we can get an unbiased estimate of the performance of the model when making predictions on new data. The speed of model evaluation is proportional to the amount of data you want to use for the evaluation, although it is much faster than training as the model is not changed. From an API perspective, this involves calling a function with the holdout dataset and getting a loss and perhaps other metrics that can be reported. Making a prediction is the final step in the life-cycle. It is why we wanted the model in the first place. It requires you have new data for which a prediction is required, e.g. where you do not have the target values. From an API perspective, you simply call a function to make a prediction of a class label, probability, or numerical value: whatever you designed your model to predict. You may want to save the model and later load it to make predictions. You may also choose to fit a model on all of the available data before you start using it. Now that we are familiar with the model life-cycle, letâ€™s take a look at the two main ways to use the tf.keras API to build models: sequential and functional. The sequential model API is the simplest and is the API that I recommend, especially when getting started. It is referred to as â€œ sequential â€ because it involves defining a  Sequential class  and adding layers to the model one by one in a linear manner, from input to output. The example below defines a Sequential MLP model that accepts eight inputs, has one hidden layer with 10 nodes and then an output layer with one node to predict a numerical value. Note that the visible layer of the network is defined by the â€œ input_shape â€ argument on the first hidden layer. That means in the above example, the model expects the input for one sample to be a vector of eight numbers. The sequential API is easy to use because you keep calling  model.add()  until you have added all of your layers. For example, here is a deep MLP with five hidden layers. The functional API is more complex but is also more flexible. It involves explicitly connecting the output of one layer to the input of another layer. Each connection is specified. First, an input layer must be defined via the  Input  class, and the shape of an input sample is specified. We must retain a reference to the input layer when defining the model. Next, a fully connected layer can be connected to the input by calling the layer and passing the input layer. This will return a reference to the output connection in this new layer. We can then connect this to an output layer in the same manner. Once connected, we define a Model object and specify the input and output layers. The complete example is listed below. As such, it allows for more complicated model designs, such as models that may have multiple input paths (separate vectors) and models that have multiple output paths (e.g. a word and a number). The functional API can be a lot of fun when you get used to it. For more on the functional API, see: Now that we are familiar with the model life-cycle and the two APIs that can be used to define models, letâ€™s look at developing some standard models. In this section, you will discover how to develop, evaluate, and make predictions with standard deep learning models, including Multilayer Perceptrons (MLP), Convolutional Neural Networks (CNNs), and Recurrent Neural Networks (RNNs). A Multilayer Perceptron model, or MLP for short, is a standard fully connected neural network model. It is comprised of layers of nodes where each node is connected to all outputs from the previous layer and the output of each node is connected to all inputs for nodes in the next layer. An MLP is created by with one or more  Dense  layers. This model is appropriate for tabular data, that is data as it looks in a table or spreadsheet with one column for each variable and one row for each variable. There are three predictive modeling problems you may want to explore with an MLP; they are binary classification, multiclass classification, and regression. Letâ€™s fit a model on a real dataset for each of these cases. Note, the models in this section are effective, but not optimized. See if you can improve their performance. Post your findings in the comments below. We will use the Ionosphere binary (two-class) classification dataset to demonstrate an MLP for binary classification. This dataset involves predicting whether a structure is in the atmosphere or not given radar returns. The dataset will be downloaded automatically using  Pandas , but you can learn more about it here. We will use a  LabelEncoder  to encode the string labels to integer values 0 and 1. The model will be fit on 67 percent of the data, and the remaining 33 percent will be used for evaluation, split using the  train_test_split()  function. It is a good practice to use â€˜ relu â€˜ activation with a â€˜ he_normal â€˜ weight initialization. This combination goes a long way to overcome the problem of vanishing gradients when training deep neural network models. For more on ReLU, see the tutorial: The model predicts the probability of class 1 and uses the sigmoid activation function. The model is optimized using the  adam version of stochastic gradient descent  and seeks to minimize the  cross-entropy loss . The complete example is listed below. Running the example first reports the shape of the dataset, then fits the model and evaluates it on the test dataset. Finally, a prediction is made for a single row of data. Your specific results will vary given the  stochastic nature of the learning algorithm . Try running the example a few times. What results did you get?  Can you change the model to do better? 
+Post your findings to the comments below. In this case, we can see that the model achieved a classification accuracy of about 94 percent and then predicted a probability of 0.9 that the one row of data belongs to class 1. We will use the Iris flowers multiclass classification dataset to demonstrate an MLP for multiclass classification. This problem involves predicting the species of iris flower given measures of the flower. The dataset will be downloaded automatically using Pandas, but you can learn more about it here. Given that it is a multiclass classification, the model must have one node for each class in the output layer and use the softmax activation function. The loss function is the â€˜ sparse_categorical_crossentropy â€˜, which is appropriate for integer encoded class labels (e.g. 0 for one class, 1 for the next class, etc.) The complete example of fitting and evaluating an MLP on the iris flowers dataset is listed below. Running the example first reports the shape of the dataset, then fits the model and evaluates it on the test dataset. Finally, a prediction is made for a single row of data. Your specific results will vary given the stochastic nature of the learning algorithm. Try running the example a few times. What results did you get?  Can you change the model to do better? 
+Post your findings to the comments below. In this case, we can see that the model achieved a classification accuracy of about 98 percent and then predicted a probability of a row of data belonging to each class, although class 0 has the highest probability. We will use the Boston housing regression dataset to demonstrate an MLP for regression predictive modeling. This problem involves predicting house value based on properties of the house and neighborhood. The dataset will be downloaded automatically using Pandas, but you can learn more about it here. This is a regression problem that involves predicting a single numerical value. As such, the output layer has a single node and uses the default or linear activation function (no activation function). The mean squared error (mse) loss is minimized when fitting the model. Recall that this is a regression, not classification; therefore, we cannot calculate classification accuracy. For more on this, see the tutorial: The complete example of fitting and evaluating an MLP on the Boston housing dataset is listed below. Running the example first reports the shape of the dataset then fits the model and evaluates it on the test dataset. Finally, a prediction is made for a single row of data. Your specific results will vary given the stochastic nature of the learning algorithm. Try running the example a few times. What results did you get?  Can you change the model to do better? 
+Post your findings to the comments below. In this case, we can see that the model achieved an MSE of about 60 which is an RMSE of about 7 (units are thousands of dollars). A value of about 26 is then predicted for the single example. Convolutional Neural Networks, or CNNs for short, are a type of network designed for image input. They are comprised of models with  convolutional layers  that extract features (called feature maps) and  pooling layers  that distill features down to the most salient elements. CNNs are most well-suited to image classification tasks, although they can be used on a wide array of tasks that take images as input. A popular image classification task is the  MNIST handwritten digit classification . It involves tens of thousands of handwritten digits that must be classified as a number between 0 and 9. The tf.keras API provides a convenience function to download and load this dataset directly. The example below loads the dataset and plots the first few images. Running the example loads the MNIST dataset, then summarizes the default train and test datasets. A plot is then created showing a grid of examples of handwritten images in the training dataset. Plot of Handwritten Digits From the MNIST dataset We can train a CNN model to classify the images in the MNIST dataset. Note that the images are arrays of grayscale pixel data; therefore, we must add a channel dimension to the data before we can use the images as input to the model. The reason is that CNN models expect images in a  channels-last format , that is each example to the network has the dimensions [rows, columns, channels], where channels represent the color channels of the image data. It is also a good idea to scale the pixel values from the default range of 0-255 to 0-1 when training a CNN. For more on scaling pixel values, see the tutorial: The complete example of fitting and evaluating a CNN model on the MNIST dataset is listed below. Running the example first reports the shape of the dataset, then fits the model and evaluates it on the test dataset. Finally, a prediction is made for a single image. Your specific results will vary given the stochastic nature of the learning algorithm. Try running the example a few times. What results did you get?  Can you change the model to do better? 
+Post your findings to the comments below. First, the shape of each image is reported along with the number of classes; we can see that each image is 28Ã—28 pixels and there are 10 classes as we expected. In this case, we can see that the model achieved a classification accuracy of about 98 percent on the test dataset. We can then see that the model predicted class 5 for the first image in the training set. Recurrent Neural Networks, or RNNs for short, are designed to operate upon sequences of data. They have proven to be very effective for natural language processing problems where sequences of text are provided as input to the model. RNNs have also seen some modest success for time series forecasting and speech recognition. The most popular type of RNN is the Long Short-Term Memory network, or LSTM for short. LSTMs can be used in a model to accept a sequence of input data and make a prediction, such as assign a class label or predict a numerical value like the next value or values in the sequence. We will use the car sales dataset to demonstrate an LSTM RNN for univariate time series forecasting. This problem involves predicting the number of car sales per month. The dataset will be downloaded automatically using Pandas, but you can learn more about it here. We will frame the problem to take a window of the last five months of data to predict the current monthâ€™s data. To achieve this, we will define a new function named  split_sequence()  that will  split the input sequence into windows  of data appropriate for fitting a supervised learning model, like an LSTM. For example, if the sequence was: Then the samples for training the model will look like: We will use the last 12 months of data as the test dataset. LSTMs expect each sample in the dataset to have two dimensions; the first is the number of time steps (in this case it is 5), and the second is the number of observations per time step (in this case it is 1). Because it is a regression type problem, we will use a linear activation function (no activation 
+function) in the output layer and optimize the mean squared error loss function. We will also evaluate the model using the mean absolute error (MAE) metric. The complete example of fitting and evaluating an LSTM for a univariate time series forecasting problem is listed below. Running the example first reports the shape of the dataset, then fits the model and evaluates it on the test dataset. Finally, a prediction is made for a single example. Your specific results will vary given the stochastic nature of the learning algorithm. Try running the example a few times. What results did you get?  Can you change the model to do better? 
+Post your findings to the comments below. First, the shape of the train and test datasets is displayed, confirming that the last 12 examples are used for model evaluation. In this case, the model achieved an MAE of about 2,800 and predicted the next value in the sequence from the test set as 13,199, where the expected value is 14,577 (pretty close). Note : it is good practice to scale and make the series stationary the data prior to fitting the model. I recommend this as an extension in order to achieve better performance. For more on preparing time series data for modeling, see the tutorial: In this section, you will discover how to use some of the slightly more advanced model features, such as reviewing learning curves and saving models for later use. The architecture of deep learning models can quickly become large and complex. As such, it is important to have a clear idea of the connections and data flow in your model. This is especially important if you are using the functional API to ensure you have indeed connected the layers of the model in the way you intended. There are two tools you can use to visualize your model: a text description and a plot. A text description of your model can be displayed by calling the  summary() function  on your model. The example below defines a small model with three layers and then summarizes the structure. Running the example prints a summary of each layer, as well as a total summary. This is an invaluable diagnostic for checking the output shapes and number of parameters (weights) in your model. You can create a plot of your model by calling the  plot_model() function . This will create an image file that contains a box and line diagram of the layers in your model. The example below creates a small three-layer model and saves a plot of the model architecture to â€˜ model.png â€˜ that includes input and output shapes. Running the example creates a plot of the model showing a box for each layer with shape information, and arrows that connect the layers, showing the flow of data through the network. Plot of Neural Network Architecture Learning curves are a plot of neural network model performance over time, such as calculated at the end of each training epoch. Plots of learning curves provide insight into the learning dynamics of the model, such as whether the model is learning well, whether it is underfitting the training dataset, or whether it is overfitting the training dataset. For a gentle introduction to learning curves and how to use them to diagnose learning dynamics of models, see the tutorial: You can easily create learning curves for your deep learning models. First, you must update your call to the fit function to include reference to a  validation dataset . This is a portion of the training set not used to fit the model, and is instead used to evaluate the performance of the model during training. You can split the data manually and specify the  validation_data  argument, or you can use the  validation_split  argument and specify a percentage split of the training dataset and let the API perform the split for you. The latter is simpler for now. The fit function will return a  history  object that contains a trace of performance metrics recorded at the end of each training epoch. This includes the chosen loss function and each configured metric, such as accuracy, and each loss and metric is calculated for the training and validation datasets. A learning curve is a plot of the loss on the training dataset and the validation dataset. We can create this plot from the  history  object using the  Matplotlib  library. The example below fits a small neural network on a synthetic binary classification problem. A validation split of 30 percent is used to evaluate the model during training and the  cross-entropy loss  on the train and validation datasets are then graphed using a line plot. Running the example fits the model on the dataset. At the end of the run, the  history  object is returned and used as the basis for creating the line plot. The cross-entropy loss for the training dataset is accessed via the â€˜ loss â€˜ key and the loss on the validation dataset is accessed via the â€˜ val_loss â€˜ key on the history attribute of the history object. Learning Curves of Cross-Entropy Loss for a Deep Learning Model Training and evaluating models is great, but we may want to use a model later without retraining it each time. This can be achieved by saving the model to file and later loading it and using it to make predictions. This can be achieved using the  save()  function on the model to save the model. It can be loaded later using the  load_model() function . The model is saved in H5 format, an efficient array storage format. As such, you must ensure that the  h5py library  is installed on your workstation. This can be achieved using  pip ; for example: The example below fits a simple model on a synthetic binary classification problem and then saves the model file. Running the example fits the model and saves it to file with the name â€˜ model.h5 â€˜. We can then load the model and use it to make a prediction, or continue training it, or do whatever we wish with it. The example below loads the model and uses it to make a prediction. Running the example loads the image from file, then uses it to make a prediction on a new row of data and prints the result. In this section, you will discover some of the techniques that you can use to improve the performance of your deep learning models. A big part of improving deep learning performance involves avoiding overfitting by slowing down the learning process or stopping the learning process at the right time. Dropout is a clever regularization method that reduces overfitting of the training dataset and makes the model more robust. This is achieved during training, where some number of layer outputs are randomly ignored or â€œ dropped out .â€ This has the effect of making the layer look like â€“ and be treated like â€“ a layer with a different number of nodes and connectivity to the prior layer. Dropout has the effect of making the training process noisy, forcing nodes within a layer to probabilistically take on more or less responsibility for the inputs. For more on how dropout works, see this tutorial: You can add dropout to your models as a new layer prior to the layer that you want to have input connections dropped-out. This involves adding a layer called  Dropout()  that takes an argument that specifies the probability that each output from the previous to drop. E.g. 0.4 means 40 percent of inputs will be dropped each update to the model. You can add Dropout layers in MLP, CNN, and RNN models, although there are also specialized versions of dropout for use with CNN and RNN models that you might also want to explore. The example below fits a small neural network model on a synthetic binary classification problem. A dropout layer with 50 percent dropout is inserted between the first hidden layer and the output layer. The scale and distribution of inputs to a layer can greatly impact how easy or quickly that layer can be trained. This is generally why it is a good idea to scale input data prior to modeling it with a neural network model. Batch normalization is a technique for training very deep neural networks that standardizes the inputs to a layer for each mini-batch. This has the effect of stabilizing the learning process and dramatically reducing the number of training epochs required to train deep networks. For more on how batch normalization works, see this tutorial: You can use batch normalization in your network by adding a batch normalization layer prior to the layer that you wish to have standardized inputs. You can use batch normalization with MLP, CNN, and RNN models. This can be achieved by adding the  BatchNormalization layer directly . The example below defines a small MLP network for a binary classification prediction problem with a batch normalization layer between the first hidden layer and the output layer. Also, tf.keras has a range of other normalization layers you might like to explore; see: Neural networks are challenging to train. Too little training and the model is underfit; too much training and the model overfits the training dataset. Both cases result in a model that is less effective than it could be. One approach to solving this problem is to use early stopping. This involves monitoring the loss on the training dataset and a validation dataset (a subset of the training set not used to fit the model). As soon as loss for the validation set starts to show signs of overfitting, the training process can be stopped. For more on early stopping, see the tutorial: Early stopping can be used with your model by first ensuring that you have a  validation dataset . You can define the validation dataset manually via the  validation_data  argument to the  fit()  function, or you can use the  validation_split  and specify the amount of the training dataset to hold back for validation. You can then define an EarlyStopping and instruct it on which performance measure to monitor, such as â€˜ val_loss â€˜ for loss on the validation dataset, and the number of epochs to observed overfitting before taking action, e.g. 5. This configured  EarlyStopping  callback can then be provided to the  fit()  function via the â€œ callbacks â€ argument that takes a list of callbacks. This allows you to set the number of epochs to a large number and be confident that training will end as soon as the model starts overfitting. You might also like to create a learning curve to discover more insights into the learning dynamics of the run and when training was halted. The example below demonstrates a small neural network on a synthetic binary classification problem that uses early stopping to halt training as soon as the model starts overfitting (after about 50 epochs). The tf.keras API provides a number of callbacks that you might like to explore; you can learn more here: This section provides more resources on the topic if you are looking to go deeper. In this tutorial, you discovered a step-by-step guide to developing deep learning models in TensorFlow using the tf.keras API. Specifically, you learned: Do you have any questions? 
+Ask your questions in the comments below and I will do my best to answer. ...with just a few lines of Python Discover how in my new Ebook:  
+	 Deep Learning With Python It covers  end-to-end projects  on topics like: 
+ Multilayer Perceptrons ,Â  Convolutional Nets  andÂ  Recurrent Neural Nets , and more... Skip the Academics. JustÂ Results. Hi Thanks for this awesome blog post. In case of the MLP for Regression example, by the first hidden layer with 10 nodes, if I change the activation function from â€˜reluâ€™ to â€˜sigmoidâ€™ I always get much better result: Following couple of tries with that change: MSE: 1078.271, RMSE: 32.837 
+Predicted: 154.961 MSE: 1306.771, RMSE: 36.149 
+Predicted: 153.267 MSE: 2511.747, RMSE: 50.117 
+Predicted: 142.649 Do you know why? Sorry I meant vice versa, thatâ€™s â€˜sigmoidâ€™ to â€˜reluâ€™. Agreed. I found the same and updated the example accordingly. Thanks Markus! Youâ€™re welcome. Nice finding, Iâ€™ll explore and update the post. The reason. My guess is the data needs to be transformed prior to scaling. Hi Thanks. Could you please elaborate your answer a bit as I didnâ€™t understand it? That model doesnâ€™t have any scaling like the CNN example. Yes, I believe that the model would perform better with sigmoid activations if the data was scaled (normalized) prior to fitting the model. The relu is more robust and is in less need of normalized inputs. Jason,  This is a great tutorial on TF 2.0 ! To add on the discussion of â€˜Reluâ€™ vs â€˜Sigmoidâ€™ output function, â€˜Reluâ€™ is used after â€˜Sigmoidâ€™ has the problem of disappearing  gradient for deep structure network, like 30-100 layers. The particular example used here is actually more a â€˜shallowâ€™ network relative to the â€˜deepâ€™ one more people are used in real project these days.  So, itâ€™s not surprised that a  â€˜sigmoidâ€™ function is fine or even better. Thanks! Yes, this gives an example: 
+ https://machinelearningmastery.com/how-to-fix-vanishing-gradients-using-the-rectified-linear-activation-function/ # mlp for regression Why use y = LabelEncoder().fit_transform(y)? Itâ€™s not necessary, and the prediction of yhat() is too large than y which max is 50.0, Youâ€™re right, looks like a bug! Thanks Todd. Updated. Little bug in last example: from: 
+from keras.callbacks import EarlyStopping to: 
+from tensorflow.keras.callbacks import EarlyStopping Thanks, fixed! Is it necessary yo set a seed before fitting the model? No. well explained and liked very much . I request you to  please write one blog using below steps? 1) tf.keras.layers.GRUCell() 
+2) tf.keras.layers.LSTMCell() 
+3) tf.nn.RNNCellDropoutWrapper() 
+4) tf.keras.layers.RNN() Great suggestions! Awesome stuff. It has very good information on TensorFlow 2. Best guide to developing deep learning models for Business intelligence .Thanks for sharing! Thanks! Nice guide! Thanks a lot! I have a question related to the MLP Binary Classification problem. During the evaluation process, iâ€™ve changed the verbose argument to 2, and got this: 116/1 â€“ 0s â€“ loss: 0.1011 â€“ accuracy: 0.9483 Iâ€™ve added a print command to show the test loss line: print(â€˜Test loss: %.3fâ€™ % loss) 
+print(â€˜Test Accuracy: %.3fâ€™ % acc) And iâ€™m getting this result: Loss Test: 0.169 
+Test Accuracy: 0.948 Why is it different from the reported by the evaluate function? You have clipped precision at 3 decimal places. Also, the end of epoch loss/accuracy is an average over the batches, it is better to call evaluate() at the end of the run to get a true estimate of model performance on a hold out dataset. Thank you so much for the blog, provides lot of information to learners 
+Please help with more information on forecasting using RNN Youâ€™re welcome! See the tutorials here: 
+ https://machinelearningmastery.com/start-here/#deep_learning_time_series Hi Jason, in the CNN example, wouldnâ€™t it be MaxPool2D instead of MaxPooling2D? I believe youâ€™re correct: 
+ https://www.tensorflow.org/api_docs/python/tf/keras/layers/MaxPool2D thanks Jason brownlee! 
+i am following your tutorial since i start my machine/deep learning journey, it really help me alot. Since deep learning models are becoming bigger which require multi-GPU support. It will be great if you write a tutorial on tf.keras for multi-GPU preferably some GAN model like CycleGAN or MUNIT. Thank Thanks for the suggestion! Hi Israr and Jason, yes I second that, it a tutorial for multi gpu using Keras would be awesome. That said, I am reading about issued of multi GPU not working with a number of tensorflow backend versions. Thanks, Mark Thanks. Thanks for another great post! 
+In the functional model API section you mention that this allows for multiple input paths. My question is related to that.  The output of my MLP model will be reshaped and 2d convolved with an image (another data input midstream to the network).  How do I keep this result as a part of the overall model for further processing?  (model.add(intermediate_result)?) 
+Thanks. Yes, you could have one output for each element you require, e.g. each layer that produces an output you want would be an â€œoutputâ€ layer. See this: 
+ https://machinelearningmastery.com/keras-functional-api-deep-learning/ never mind, I figured it out, the functional API does make it easy! Well done! This blog was written so well, it filled me up with emotions! 
+I am now doing the monthly donation. And I would suggest for everyone to give back to this awesome blog to keep it up and running! Thank you Jason for this fantastic initiative, you are literally creating jobs! Thanks!!! Hi For the input_shape parameter of a a Dense layer it seems that one can pass over a list instead of a tuple. Thatâ€™s model.add(Dense(10, input_shape=[8])) Instead of: model.add(Dense(10, input_shape=(8,))) My questions are: Is that the same? 
+Why is that so that both works? Probably itâ€™s even possible for any layer type that has input_shape parameter (which Iâ€™ve not tested).  Thanks I think I figured it out by myself, BUT please correct me if Iâ€™m wrong. Itâ€™s happening here: https://github.com/keras-team/keras/blob/master/keras/engine/base_layer.py#L163 So no matter if you pass over a list or a tuple object, the return value of: tuple(kwargs[â€˜input_shapeâ€™]) will be always the same as a tuple object because: >>> tuple((2,)) 
+(2,) >>> tuple([2]) 
+(2,) Am I right? Thanks. Identical. Hi Jason Thanks for your reply. What do you mean with identical? Sorry my English is a bit poor. Equilivient. They do the same thing. Hi Jason, In Ionosphere data code block line 32, should it be 
+yhat = model.predict(([row],)) instead of yhat = model.predict([row])? Just to match the input_shape, which is required to be a one-element tuple? The model expects 2d input: rows,cols or samples,features. Hi Jason: Great tutorial ! It is a good summary of different MLP, CNN and RNN models (including the datasets cases approached by simple few lines codes). Congratulations !. 1.) Here are my results, at the time being I have only worked with Ionosphere and Iris data cases (I will continue the next ones) but, I share the first two: 1.1) in the fist Ionosphere study Case (MLP model for Binary Classification), I apply some differences (complementing your codes) such as: 80% training data, 10% validation data (that I included in model.fit data) and 10% test data (unseen for accuracy evaluation). Plus I add batchnormalization and dropout (0.5) layers to each of any dense layer (for regularization purposes) and I use 34 units and 8 units for the 2 hidden layers respectively. I got 97.2% (a little be better of yours 94.% accuracy for unseen test) and 97.3% class good for the example given 1.2) in the second Iris study Case (MLP Multiclassification), I apply some differences (complementing your codes) such as: 80% training data, 10% validation data (I include in model.fit data) and 10% test data (unseen for accuracy evaluation). Plus I add batchnormalization and dropout (0.5) layers to each of any dense layer (for regularization purposes) and I use 64 units, 32 units  and 8 units for the now 3 hidden layers respectively. I got 100.% (a little be better of yours 98.% accuracy for unseen test) and 99.9% class Iris-setosa for the example given 2.) Here are my persistent doubts, in case you can help me: 2.1) if applyng tf.keras new wrapper over tf. 2.x version it is only impact on change the libraries importation such as for example replacing this Keras one example: 
+from keras.utils import plot_model 
+for a new one using the tf.keras wrappers 
+from tensorflow.keras.utils import plot_model it is highly recommended to apply tf.keras directly due to better guarantee of maintenance by Google/tensorflow team. Do you agree? 2.2) do you expect any efficiency improvement (e.g. on execution time) using tf.keras vs keras ? I apply it but I do not see any change at all. Do you agree? 2.3) I see you have changed loss parameter in Multiclassification (e.g. Iris study case) from previous tutorials of your from categorical_crossentropy to the new one sparse_categorical_crossentroypy. I think it is better the second one. Do you agree? thank you very much for make these awesome tutorials for us!! 
+I will continue with the rest of study cases under this tutorial ! regards 
+JG Nice work, but the test/val sets are very small. I guess we should be using repeated 10 fold cross-validation. Yes, we should cut over to tf.keras soon: 
+ https://machinelearningmastery.com/faq/single-faq/what-is-the-difference-between-keras-and-tf-keras Not sure about efficiency differences. No. They do the same thing, I used the sparse loss so I didnâ€™t have to one hot encode. Thanks for your valuable suggestions ! Iâ€™m hooked on your tutorials ! Thanks! Hi Jason, I spent some time implementing different models for  MNIST Images Digits Multiclass. 
+Here I share my main comments: the 10,000 Test Image I split between 5,000 for Validation (besides training images) and another 5,000 for test (unseeing images for model.evaluate() ), so I think it is more Objetive.  1.) Replicating your same model architecture I got 98.3% Accuracy and, if I replace your 32 filters of your first Conv2D layer for â€œ784â€ filters  I got 98.2%, but the 2 minutes CPU time goes to 45 minutes. 2.) I define a new model with â€œ4 blocksâ€ of increasing number of filters [16,32,64,128] of conv2D`s plus batchnormalization+MaxPoool2D+ Dropout layers as regularizers. But I got I worst result (97.2% and 97.4% if I replace the batch size from 128 for 32). 3.) I apply â€œData Augmentationâ€ to your model (with soft images distortion due to poor 28Ã—28 resolution), but I got  96.7%, 97.3% and 97.9% respectively for witdth_shift_range adn similiar height_shiftrange_ arguments values of 0.1, 0.05 and 0.01.  3.1) But also Applying â€œreTrainâ€ (from 10 epochs to 20 epochs and even 40 epochs9 where I get 98.2% Accuracy, very close to your model. I noticed that tensorflow.kerasâ€¦ apply the unique method of â€œmodel.fit() â€œeven with â€˜ImageDataGeneratorâ€™.So â€œmodel.fit_genetator()â€ of keras for imaging iterator is going to be deprecated ! 4.) I apply â€˜transfer learningâ€™, using VGG16. 
+But first I have to expand each 28Ã—28 pixels image to 32Ã—32 (VGG16 requirement), filling with zeros the rest of rows and columns of image. I also expand from 1 channel Black/White to 3 channel (VGG16 requirement), stacking the same image 3 times ( np.stack() for the new axis) and,  4.1) I got a  poor result of 95.2% accuracy for frozen the whole VGG16 (5 blocks) and using only head dense layer as trainable. 4.2) I reTraining several more epochs + 10 + 10 etc. I got moderate accuracy results such as 96.2% and 96.7% 4.3) I decided to â€œdefrostâ€ (be trainable) also the last block (5Âº) of VGG16 and I got for 10 epoch 97.2% but I went from 2 minutes CPU time to 45 minutes and also from 52 K weights to 7.1 M trainable 4.3)   I decided to â€œdefrostâ€ also the penultimate block number 4th (so 4 and 5 blocks are trainable ) and I went from 45minutes to 85 minutes of CPU and from 7.1 M parameters to 13. M trainable parameters. But I got 98.4 % Accuracy 4.4) Finally I â€œreTrainâ€ the VGG16 (defrosting 4 and 5th block) and I got for 20 more epochs and 20 more  99.4% and 99.4% also replacing â€˜Adamâ€™ optimizer by more soft â€œSGDâ€ for fine tuning. 
+At the cost of increasing cpu time goes from 45 minutes to 85 minutes. My conclusions are: a) your simple model is very efficient, and robust (without implementing any complexity such as data_augmentation) b)  I can beat yours result I get the best one 99.4%, at the cost fo implementing VGG16 transfer Learning, besides defrosting 4th and 5 blocks of VGG16. At the cost of more complexity and more CPU time. c) These models are sensitives to retrain from the 10 initial epochs up to 40 where the system does nor learn anymore. regards, 
+JG Very cool experiments, great learnings! Thanks for sharing your findings. You showed how to predict for one instance of data, but how to do the same for all the test dataset? Instead of passing yhat = model.predict([row]) what should we do to get all the predictions from the test dataset? Pass in all rows into the predict() function to make a prediction for them. This will help if you need it: 
+ https://machinelearningmastery.com/how-to-make-classification-and-regression-predictions-for-deep-learning-models-in-keras/ Hi Jason, thank you too much for the helpful topic. I have a problem that I need your help on it. Due to the suggestion from keras.io and from your topic, I turned to use â€œtf.kerasâ€ instead of â€œkerasâ€ to build my Deep NNs model. I am trying to define a custom loss function for my model. Firstly, I took a look at how â€œtf.kerasâ€ and â€œkerasâ€ define (by codes) their loss function so that I could follow for my custom loss fn. I took the available MeanSquaredError() for the observation, and I found that they donâ€™t seem to give identical results. Particularly, My first case =========================================================== â€ 
+import numpy as np import tensorflow as tf y_t = np.array([[1, 2, 3, 4], [8, 9, 1, 5], [7, 8, 7, 13]]) 
+y_p = np.array([[4, 5, 23, 14], [18, 91, 7, 10], [3, 6, 5, 7]]) mse = tf.keras.losses.MeanSquaredError() 
+loss1 = mse(y_t, y_p) print(â€˜â€”â€˜) 
+print(â€˜tf.keras.losses:â€™, loss1) â€  The result is: 
+ â€” tf.keras.losses: tf.Tensor(621, shape=(), dtype=int32) â€” My second case ========================================================= â€ 
+import numpy as np import keras y_t = np.array([[1, 2, 3, 4],[8, 9, 1, 5],[7, 8, 7, 13]]) 
+y_p = np.array([[4, 5, 23, 14],[18, 91, 7, 10],[3, 6, 5, 7]]) mse2 = keras.losses.MeanSquaredError() 
+loss2 = mse2(y_t, y_p) print(â€˜â€”â€˜) 
+print(â€˜keras.losses:â€™, loss2) â€ The result is:  â€” keras.losses: tf.Tensor(621.9167, shape=(), dtype=float32) â€”  ====================================================================== Well, the former gives the â€œdtype=int32â€ and the later gives â€œdtype=float32â€ although they were run with the same input data. So, what could be the explanations for the difference? I believe, when the model is trained, the loss values are unlikely to be integer, so is it a problem if I use the â€œtf.keras.losses.MeanSquaredError()â€ for my model? Lastly, is there any problem of using some loss fns from keras.losses for the model.compile() if the model is built by tf.keras.Sequential()? I generally recommend sticking with standalone Keras for now: 
+ https://machinelearningmastery.com/faq/single-faq/what-is-the-difference-between-keras-and-tf-keras I cannot help you debug the conversion, sorry. Thanks for your reply Jason! Comment   Name  (required)   Email (will not be published)  (required)   Website   
  
-Predictive modeling with deep learning is a skill that modern developers need to know.
-TensorFlow is the premier open-source deep learning framework developed and maintained by Google. Although using TensorFlow directly can be challenging, the modern tf.keras API beings the simplicity and ease of use of Keras to the TensorFlow project.
-Using tf.keras allows you to design, fit, evaluate, and use deep learning models to make predictions in just a few lines of code. It makes common deep learning tasks, such as classification and regression predictive modeling, accessible to average developers looking to get things done.
-In this tutorial, you will discover a step-by-step guide to developing deep learning models in TensorFlow using the tf.keras API.
-After completing this tutorial, you will know:
-This is a large tutorial, and a lot of fun. You might want to bookmark it.
-The examples are small and focused; you can finish this tutorial in about 60 minutes.
-Let’s get started.
-How to Develop Deep Learning Models With tf.keras
-Photo by 
-, some rights reserved.
-This tutorial is designed to be your complete introduction to tf.keras for your deep learning project.
-The focus is on using the API for common deep learning model development tasks; we will not be diving into the math and theory of deep learning. For that, I recommend 
-.
-The best way to learn deep learning in python is by doing. Dive in. You can circle back for more theory later.
-I have designed each code example to use best practices and to be standalone so that you can copy and paste it directly into your project and adapt it to your specific needs. This will give you a massive head start over trying to figure out the API from official documentation alone.
-It is a large tutorial and as such, it is divided into five parts; they are:
-Work through the tutorial at your own pace.
-. Your goal is to run through the tutorial end-to-end and get results. You do not need to understand everything on the first pass. List down your questions as you go. Make heavy use of the API documentation to learn about all of the functions that you’re using.
-. Math is a compact way of describing how algorithms work, specifically tools from 
-, 
-, and 
-. These are not the only tools that you can use to learn how algorithms work. You can also use code and explore algorithm behavior with different inputs and outputs. Knowing the math will not tell you what algorithm to choose or how to best configure it. You can only discover that through careful, controlled experiments.
-. It is important to know about the limitations and how to configure deep learning algorithms. But learning about algorithms can come later. You need to build up this algorithm knowledge slowly over a long period of time. Today, start by getting comfortable with the platform.
-. The syntax of the Python language can be intuitive if you are new to it. Just like other languages, focus on function calls (e.g. function()) and assignments (e.g. a = “b”). This will get you most of the way. You are a developer, so you know how to pick up the basics of a language really fast. Just get started and dive into the details later.
-. You can learn about the benefits and limitations of various algorithms later, and there are plenty of posts that you can read later to brush up on the steps of a deep learning project and the importance of evaluating model skill using cross-validation.
-In this section, you will discover what tf.keras is, how to install it, and how to confirm that it is installed correctly.
- is an open-source deep learning library written in Python.
-The project was started in 2015 by 
-. It quickly became a popular framework for developers, becoming one of, if not the most, popular deep learning libraries.
-During the period of 2015-2019, developing deep learning models using mathematical libraries like TensorFlow, Theano, and PyTorch was cumbersome, requiring tens or even hundreds of lines of code to achieve the simplest tasks. The focus of these libraries was on research, flexibility, and speed, not ease of use.
-Keras was popular because the API was clean and simple, allowing standard deep learning models to be defined, fit, and evaluated in just a few lines of code.
-A secondary reason Keras took-off was because it allowed you to use any one among the range of popular deep learning mathematical libraries as the backend (e.g. used to perform the computation), such as 
-, 
-, and later, 
-. This allowed the power of these libraries to be harnessed (e.g. GPUs) with a very clean and simple interface.
-In 2019, Google released a new version of their TensorFlow deep learning library (TensorFlow 2) that integrated the Keras API directly and promoted this interface as the default or standard interface for deep learning development on the platform.
-This integration is commonly referred to as the 
- interface or API (“
-” is short for “
-“). This is to distinguish it from the so-called standalone Keras open source project.
-The Keras API implementation in Keras is referred to as “
-” because this is the Python idiom used when referencing the API. First, the TensorFlow module is imported and named “
-“; then, Keras API elements are accessed via calls to 
-; for example:
-I generally don’t use this idiom myself; I don’t think it reads cleanly.
-Given that TensorFlow was the de facto standard backend for the Keras open source project, the integration means that a single library can now be used instead of two separate libraries. Further, the standalone Keras project now recommends all future Keras development use the 
- API.
-At this time, we recommend that Keras users who use multi-backend Keras with the TensorFlow backend switch to tf.keras in TensorFlow 2.0. tf.keras is better maintained and has better integration with TensorFlow features (eager execution, distribution support and other).
-— 
-, Accessed December 2019.
-Before installing TensorFlow, ensure that you have Python installed, such as Python 3.6 or higher.
-If you don’t have Python installed, you can install it using Anaconda. This tutorial will show you how:
-There are many ways to install the TensorFlow open-source deep learning library.
-The most common, and perhaps the simplest, way to install TensorFlow on your workstation is by using 
-.
-For example, on the command line, you can type:
-If you prefer to use an installation method more specific to your platform or package manager, you can see a complete list of installation instructions here:
-There is no need to set up the GPU now.
-All examples in this tutorial will work just fine on a modern CPU. If you want to configure TensorFlow for your GPU, you can do that after completing this tutorial. Don’t get distracted!
-Once TensorFlow is installed, it is important to confirm that the library was installed successfully and that you can start using it.
-.
-If TensorFlow is not installed correctly or raises an error on this step, you won’t be able to run the examples later.
-Create a new file called 
- and copy and paste the following code into the file.
-Save the file, then open your 
- and change directory to where you saved the file.
-Then type:
-You should then see output like the following:
-This confirms that TensorFlow is installed correctly and that we are all using the same version.
-
-Post your output in the comments below.
-This also shows you how to run a Python script from the command line. I recommend running all code from the command line in this manner, and 
-.
-Sometimes when you use the 
- API, you may see warnings printed.
-This might include messages that your hardware supports features that your TensorFlow installation was not configured to use.
-Some examples on my workstation include:
-They are not your fault. 
-.
-These are information messages and they will not prevent the execution of your code. You can safely ignore messages of this type for now.
-It’s an intentional design decision made by the TensorFlow team to show these warning messages. A downside of this decision is that it confuses beginners and it trains developers to ignore all messages, including those that potentially may impact the execution.
-Now that you know what tf.keras is, how to install TensorFlow, and how to confirm your development environment is working, let’s look at the life-cycle of deep learning models in TensorFlow.
-In this section, you will discover the life-cycle for a deep learning model and the two tf.keras APIs that you can use to define models.
-A model has a life-cycle, and this very simple knowledge provides the backbone for both modeling a dataset and understanding the tf.keras API.
-The five steps in the life-cycle are as follows:
-Let’s take a closer look at each step in turn.
-Defining the model requires that you first select the type of model that you need and then choose the architecture or network topology.
-From an API perspective, this involves defining the layers of the model, configuring each layer with a number of nodes and activation function, and connecting the layers together into a cohesive model.
-Models can be defined either with the Sequential API or the Functional API, and we will take a look at this in the next section.
-Compiling the model requires that you first select a loss function that you want to optimize, such as mean squared error or cross-entropy.
-It also requires that you select an algorithm to perform the optimization procedure, typically stochastic gradient descent, or a modern variation, such as Adam. It may also require that you select any performance metrics to keep track of during the model training process.
-From an API perspective, this involves calling a function to compile the model with the chosen configuration, which will prepare the appropriate data structures required for the efficient use of the model you have defined.
-The optimizer can be specified as a string for a known optimizer class, e.g. ‘
-‘ for stochastic gradient descent, or you can configure an instance of an optimizer class and use that.
-For a list of supported optimizers, see this:
-The three most common loss functions are:
-For a list of supported loss functions, see:
-Metrics are defined as a list of strings for known metric functions or a list of functions to call to evaluate predictions.
-For a list of supported metrics, see:
-Fitting the model requires that you first select the training configuration, such as the number of epochs (loops through the training dataset) and the batch size (number of samples in an epoch used to estimate model error).
-Training applies the chosen optimization algorithm to minimize the chosen loss function and updates the model using the backpropagation of error algorithm.
-Fitting the model is the slow part of the whole process and can take seconds to hours to days, depending on the complexity of the model, the hardware you’re using, and the size of the training dataset.
-From an API perspective, this involves calling a function to perform the training process. This function will block (not return) until the training process has finished.
-For help on how to choose the batch size, see this tutorial:
-While fitting the model, a progress bar will summarize the status of each epoch and the overall training process. This can be simplified to a simple report of model performance each epoch by setting the “
-” argument to 2. All output can be turned off during training by setting “
-” to 0.
-Evaluating the model requires that you first choose a holdout dataset used to evaluate the model. This should be data not used in the training process so that we can get an unbiased estimate of the performance of the model when making predictions on new data.
-The speed of model evaluation is proportional to the amount of data you want to use for the evaluation, although it is much faster than training as the model is not changed.
-From an API perspective, this involves calling a function with the holdout dataset and getting a loss and perhaps other metrics that can be reported.
-Making a prediction is the final step in the life-cycle. It is why we wanted the model in the first place.
-It requires you have new data for which a prediction is required, e.g. where you do not have the target values.
-From an API perspective, you simply call a function to make a prediction of a class label, probability, or numerical value: whatever you designed your model to predict.
-You may want to save the model and later load it to make predictions. You may also choose to fit a model on all of the available data before you start using it.
-Now that we are familiar with the model life-cycle, let’s take a look at the two main ways to use the tf.keras API to build models: sequential and functional.
-The sequential model API is the simplest and is the API that I recommend, especially when getting started.
-It is referred to as “
-” because it involves defining a 
- and adding layers to the model one by one in a linear manner, from input to output.
-The example below defines a Sequential MLP model that accepts eight inputs, has one hidden layer with 10 nodes and then an output layer with one node to predict a numerical value.
-Note that the visible layer of the network is defined by the “
-” argument on the first hidden layer. That means in the above example, the model expects the input for one sample to be a vector of eight numbers.
-The sequential API is easy to use because you keep calling 
- until you have added all of your layers.
-For example, here is a deep MLP with five hidden layers.
-The functional API is more complex but is also more flexible.
-It involves explicitly connecting the output of one layer to the input of another layer. Each connection is specified.
-First, an input layer must be defined via the 
- class, and the shape of an input sample is specified. We must retain a reference to the input layer when defining the model.
-Next, a fully connected layer can be connected to the input by calling the layer and passing the input layer. This will return a reference to the output connection in this new layer.
-We can then connect this to an output layer in the same manner.
-Once connected, we define a Model object and specify the input and output layers. The complete example is listed below.
-As such, it allows for more complicated model designs, such as models that may have multiple input paths (separate vectors) and models that have multiple output paths (e.g. a word and a number).
-The functional API can be a lot of fun when you get used to it.
-For more on the functional API, see:
-Now that we are familiar with the model life-cycle and the two APIs that can be used to define models, let’s look at developing some standard models.
-In this section, you will discover how to develop, evaluate, and make predictions with standard deep learning models, including Multilayer Perceptrons (MLP), Convolutional Neural Networks (CNNs), and Recurrent Neural Networks (RNNs).
-A Multilayer Perceptron model, or MLP for short, is a standard fully connected neural network model.
-It is comprised of layers of nodes where each node is connected to all outputs from the previous layer and the output of each node is connected to all inputs for nodes in the next layer.
-An MLP is created by with one or more 
- layers. This model is appropriate for tabular data, that is data as it looks in a table or spreadsheet with one column for each variable and one row for each variable. There are three predictive modeling problems you may want to explore with an MLP; they are binary classification, multiclass classification, and regression.
-Let’s fit a model on a real dataset for each of these cases.
-Note, the models in this section are effective, but not optimized. See if you can improve their performance. Post your findings in the comments below.
-We will use the Ionosphere binary (two-class) classification dataset to demonstrate an MLP for binary classification.
-This dataset involves predicting whether a structure is in the atmosphere or not given radar returns.
-The dataset will be downloaded automatically using 
-, but you can learn more about it here.
-We will use a 
- to encode the string labels to integer values 0 and 1. The model will be fit on 67 percent of the data, and the remaining 33 percent will be used for evaluation, split using the 
- function.
-It is a good practice to use ‘
-‘ activation with a ‘
-‘ weight initialization. This combination goes a long way to overcome the problem of vanishing gradients when training deep neural network models. For more on ReLU, see the tutorial:
-The model predicts the probability of class 1 and uses the sigmoid activation function. The model is optimized using the 
- and seeks to minimize the 
-.
-The complete example is listed below.
-Running the example first reports the shape of the dataset, then fits the model and evaluates it on the test dataset. Finally, a prediction is made for a single row of data.
-Your specific results will vary given the 
-. Try running the example a few times.
- Can you change the model to do better?
-
-Post your findings to the comments below.
-In this case, we can see that the model achieved a classification accuracy of about 94 percent and then predicted a probability of 0.9 that the one row of data belongs to class 1.
-We will use the Iris flowers multiclass classification dataset to demonstrate an MLP for multiclass classification.
-This problem involves predicting the species of iris flower given measures of the flower.
-The dataset will be downloaded automatically using Pandas, but you can learn more about it here.
-Given that it is a multiclass classification, the model must have one node for each class in the output layer and use the softmax activation function. The loss function is the ‘
-‘, which is appropriate for integer encoded class labels (e.g. 0 for one class, 1 for the next class, etc.)
-The complete example of fitting and evaluating an MLP on the iris flowers dataset is listed below.
-Running the example first reports the shape of the dataset, then fits the model and evaluates it on the test dataset. Finally, a prediction is made for a single row of data.
-Your specific results will vary given the stochastic nature of the learning algorithm. Try running the example a few times.
- Can you change the model to do better?
-
-Post your findings to the comments below.
-In this case, we can see that the model achieved a classification accuracy of about 98 percent and then predicted a probability of a row of data belonging to each class, although class 0 has the highest probability.
-We will use the Boston housing regression dataset to demonstrate an MLP for regression predictive modeling.
-This problem involves predicting house value based on properties of the house and neighborhood.
-The dataset will be downloaded automatically using Pandas, but you can learn more about it here.
-This is a regression problem that involves predicting a single numerical value. As such, the output layer has a single node and uses the default or linear activation function (no activation function). The mean squared error (mse) loss is minimized when fitting the model.
-Recall that this is a regression, not classification; therefore, we cannot calculate classification accuracy. For more on this, see the tutorial:
-The complete example of fitting and evaluating an MLP on the Boston housing dataset is listed below.
-Running the example first reports the shape of the dataset then fits the model and evaluates it on the test dataset. Finally, a prediction is made for a single row of data.
-Your specific results will vary given the stochastic nature of the learning algorithm. Try running the example a few times.
- Can you change the model to do better?
-
-Post your findings to the comments below.
-In this case, we can see that the model achieved an MSE of about 60 which is an RMSE of about 7 (units are thousands of dollars). A value of about 26 is then predicted for the single example.
-Convolutional Neural Networks, or CNNs for short, are a type of network designed for image input.
-They are comprised of models with 
- that extract features (called feature maps) and 
- that distill features down to the most salient elements.
-CNNs are most well-suited to image classification tasks, although they can be used on a wide array of tasks that take images as input.
-A popular image classification task is the 
-. It involves tens of thousands of handwritten digits that must be classified as a number between 0 and 9.
-The tf.keras API provides a convenience function to download and load this dataset directly.
-The example below loads the dataset and plots the first few images.
-Running the example loads the MNIST dataset, then summarizes the default train and test datasets.
-A plot is then created showing a grid of examples of handwritten images in the training dataset.
-Plot of Handwritten Digits From the MNIST dataset
-We can train a CNN model to classify the images in the MNIST dataset.
-Note that the images are arrays of grayscale pixel data; therefore, we must add a channel dimension to the data before we can use the images as input to the model. The reason is that CNN models expect images in a 
-, that is each example to the network has the dimensions [rows, columns, channels], where channels represent the color channels of the image data.
-It is also a good idea to scale the pixel values from the default range of 0-255 to 0-1 when training a CNN. For more on scaling pixel values, see the tutorial:
-The complete example of fitting and evaluating a CNN model on the MNIST dataset is listed below.
-Running the example first reports the shape of the dataset, then fits the model and evaluates it on the test dataset. Finally, a prediction is made for a single image.
-Your specific results will vary given the stochastic nature of the learning algorithm. Try running the example a few times.
- Can you change the model to do better?
-
-Post your findings to the comments below.
-First, the shape of each image is reported along with the number of classes; we can see that each image is 28×28 pixels and there are 10 classes as we expected.
-In this case, we can see that the model achieved a classification accuracy of about 98 percent on the test dataset. We can then see that the model predicted class 5 for the first image in the training set.
-Recurrent Neural Networks, or RNNs for short, are designed to operate upon sequences of data.
-They have proven to be very effective for natural language processing problems where sequences of text are provided as input to the model. RNNs have also seen some modest success for time series forecasting and speech recognition.
-The most popular type of RNN is the Long Short-Term Memory network, or LSTM for short. LSTMs can be used in a model to accept a sequence of input data and make a prediction, such as assign a class label or predict a numerical value like the next value or values in the sequence.
-We will use the car sales dataset to demonstrate an LSTM RNN for univariate time series forecasting.
-This problem involves predicting the number of car sales per month.
-The dataset will be downloaded automatically using Pandas, but you can learn more about it here.
-We will frame the problem to take a window of the last five months of data to predict the current month’s data.
-To achieve this, we will define a new function named 
- that will 
- of data appropriate for fitting a supervised learning model, like an LSTM.
-For example, if the sequence was:
-Then the samples for training the model will look like:
-We will use the last 12 months of data as the test dataset.
-LSTMs expect each sample in the dataset to have two dimensions; the first is the number of time steps (in this case it is 5), and the second is the number of observations per time step (in this case it is 1).
-Because it is a regression type problem, we will use a linear activation function (no activation
-
-function) in the output layer and optimize the mean squared error loss function. We will also evaluate the model using the mean absolute error (MAE) metric.
-The complete example of fitting and evaluating an LSTM for a univariate time series forecasting problem is listed below.
-Running the example first reports the shape of the dataset, then fits the model and evaluates it on the test dataset. Finally, a prediction is made for a single example.
-Your specific results will vary given the stochastic nature of the learning algorithm. Try running the example a few times.
- Can you change the model to do better?
-
-Post your findings to the comments below.
-First, the shape of the train and test datasets is displayed, confirming that the last 12 examples are used for model evaluation.
-In this case, the model achieved an MAE of about 2,800 and predicted the next value in the sequence from the test set as 13,199, where the expected value is 14,577 (pretty close).
-: it is good practice to scale and make the series stationary the data prior to fitting the model. I recommend this as an extension in order to achieve better performance. For more on preparing time series data for modeling, see the tutorial:
-In this section, you will discover how to use some of the slightly more advanced model features, such as reviewing learning curves and saving models for later use.
-The architecture of deep learning models can quickly become large and complex.
-As such, it is important to have a clear idea of the connections and data flow in your model. This is especially important if you are using the functional API to ensure you have indeed connected the layers of the model in the way you intended.
-There are two tools you can use to visualize your model: a text description and a plot.
-A text description of your model can be displayed by calling the 
- on your model.
-The example below defines a small model with three layers and then summarizes the structure.
-Running the example prints a summary of each layer, as well as a total summary.
-This is an invaluable diagnostic for checking the output shapes and number of parameters (weights) in your model.
-You can create a plot of your model by calling the 
-.
-This will create an image file that contains a box and line diagram of the layers in your model.
-The example below creates a small three-layer model and saves a plot of the model architecture to ‘
-‘ that includes input and output shapes.
-Running the example creates a plot of the model showing a box for each layer with shape information, and arrows that connect the layers, showing the flow of data through the network.
-Plot of Neural Network Architecture
-Learning curves are a plot of neural network model performance over time, such as calculated at the end of each training epoch.
-Plots of learning curves provide insight into the learning dynamics of the model, such as whether the model is learning well, whether it is underfitting the training dataset, or whether it is overfitting the training dataset.
-For a gentle introduction to learning curves and how to use them to diagnose learning dynamics of models, see the tutorial:
-You can easily create learning curves for your deep learning models.
-First, you must update your call to the fit function to include reference to a 
-. This is a portion of the training set not used to fit the model, and is instead used to evaluate the performance of the model during training.
-You can split the data manually and specify the 
- argument, or you can use the 
- argument and specify a percentage split of the training dataset and let the API perform the split for you. The latter is simpler for now.
-The fit function will return a 
- object that contains a trace of performance metrics recorded at the end of each training epoch. This includes the chosen loss function and each configured metric, such as accuracy, and each loss and metric is calculated for the training and validation datasets.
-A learning curve is a plot of the loss on the training dataset and the validation dataset. We can create this plot from the 
- object using the 
- library.
-The example below fits a small neural network on a synthetic binary classification problem. A validation split of 30 percent is used to evaluate the model during training and the 
- on the train and validation datasets are then graphed using a line plot.
-Running the example fits the model on the dataset. At the end of the run, the 
- object is returned and used as the basis for creating the line plot.
-The cross-entropy loss for the training dataset is accessed via the ‘
-‘ key and the loss on the validation dataset is accessed via the ‘
-‘ key on the history attribute of the history object.
-Learning Curves of Cross-Entropy Loss for a Deep Learning Model
-Training and evaluating models is great, but we may want to use a model later without retraining it each time.
-This can be achieved by saving the model to file and later loading it and using it to make predictions.
-This can be achieved using the 
- function on the model to save the model. It can be loaded later using the 
-.
-The model is saved in H5 format, an efficient array storage format. As such, you must ensure that the 
- is installed on your workstation. This can be achieved using 
-; for example:
-The example below fits a simple model on a synthetic binary classification problem and then saves the model file.
-Running the example fits the model and saves it to file with the name ‘
-‘.
-We can then load the model and use it to make a prediction, or continue training it, or do whatever we wish with it.
-The example below loads the model and uses it to make a prediction.
-Running the example loads the image from file, then uses it to make a prediction on a new row of data and prints the result.
-In this section, you will discover some of the techniques that you can use to improve the performance of your deep learning models.
-A big part of improving deep learning performance involves avoiding overfitting by slowing down the learning process or stopping the learning process at the right time.
-Dropout is a clever regularization method that reduces overfitting of the training dataset and makes the model more robust.
-This is achieved during training, where some number of layer outputs are randomly ignored or “
-.” This has the effect of making the layer look like – and be treated like – a layer with a different number of nodes and connectivity to the prior layer.
-Dropout has the effect of making the training process noisy, forcing nodes within a layer to probabilistically take on more or less responsibility for the inputs.
-For more on how dropout works, see this tutorial:
-You can add dropout to your models as a new layer prior to the layer that you want to have input connections dropped-out.
-This involves adding a layer called 
- that takes an argument that specifies the probability that each output from the previous to drop. E.g. 0.4 means 40 percent of inputs will be dropped each update to the model.
-You can add Dropout layers in MLP, CNN, and RNN models, although there are also specialized versions of dropout for use with CNN and RNN models that you might also want to explore.
-The example below fits a small neural network model on a synthetic binary classification problem.
-A dropout layer with 50 percent dropout is inserted between the first hidden layer and the output layer.
-The scale and distribution of inputs to a layer can greatly impact how easy or quickly that layer can be trained.
-This is generally why it is a good idea to scale input data prior to modeling it with a neural network model.
-Batch normalization is a technique for training very deep neural networks that standardizes the inputs to a layer for each mini-batch. This has the effect of stabilizing the learning process and dramatically reducing the number of training epochs required to train deep networks.
-For more on how batch normalization works, see this tutorial:
-You can use batch normalization in your network by adding a batch normalization layer prior to the layer that you wish to have standardized inputs. You can use batch normalization with MLP, CNN, and RNN models.
-This can be achieved by adding the 
-.
-The example below defines a small MLP network for a binary classification prediction problem with a batch normalization layer between the first hidden layer and the output layer.
-Also, tf.keras has a range of other normalization layers you might like to explore; see:
-Neural networks are challenging to train.
-Too little training and the model is underfit; too much training and the model overfits the training dataset. Both cases result in a model that is less effective than it could be.
-One approach to solving this problem is to use early stopping. This involves monitoring the loss on the training dataset and a validation dataset (a subset of the training set not used to fit the model). As soon as loss for the validation set starts to show signs of overfitting, the training process can be stopped.
-For more on early stopping, see the tutorial:
-Early stopping can be used with your model by first ensuring that you have a 
-. You can define the validation dataset manually via the 
- argument to the 
- function, or you can use the 
- and specify the amount of the training dataset to hold back for validation.
-You can then define an EarlyStopping and instruct it on which performance measure to monitor, such as ‘
-‘ for loss on the validation dataset, and the number of epochs to observed overfitting before taking action, e.g. 5.
-This configured 
- callback can then be provided to the 
- function via the “
-” argument that takes a list of callbacks.
-This allows you to set the number of epochs to a large number and be confident that training will end as soon as the model starts overfitting. You might also like to create a learning curve to discover more insights into the learning dynamics of the run and when training was halted.
-The example below demonstrates a small neural network on a synthetic binary classification problem that uses early stopping to halt training as soon as the model starts overfitting (after about 50 epochs).
-The tf.keras API provides a number of callbacks that you might like to explore; you can learn more here:
-This section provides more resources on the topic if you are looking to go deeper.
-In this tutorial, you discovered a step-by-step guide to developing deep learning models in TensorFlow using the tf.keras API.
-Specifically, you learned:
-
-Ask your questions in the comments below and I will do my best to answer.
-...with just a few lines of Python
-Discover how in my new Ebook: 
-
-	
-It covers 
- on topics like:
-
-
-, 
- and 
-, and more...
-Skip the Academics. Just Results.
-Hi
-Thanks for this awesome blog post.
-In case of the MLP for Regression example, by the first hidden layer with 10 nodes, if I change the activation function from ‘relu’ to ‘sigmoid’ I always get much better result: Following couple of tries with that change:
-MSE: 1078.271, RMSE: 32.837
-
-Predicted: 154.961
-MSE: 1306.771, RMSE: 36.149
-
-Predicted: 153.267
-MSE: 2511.747, RMSE: 50.117
-
-Predicted: 142.649
-Do you know why?
-Sorry I meant vice versa, that’s ‘sigmoid’ to ‘relu’.
-Agreed.
-I found the same and updated the example accordingly.
-Thanks Markus!
-You’re welcome.
-Nice finding, I’ll explore and update the post.
-The reason. My guess is the data needs to be transformed prior to scaling.
-Hi
-Thanks.
-Could you please elaborate your answer a bit as I didn’t understand it? That model doesn’t have any scaling like the CNN example.
-Yes, I believe that the model would perform better with sigmoid activations if the data was scaled (normalized) prior to fitting the model.
-The relu is more robust and is in less need of normalized inputs.
-Jason,  This is a great tutorial on TF 2.0 !
-To add on the discussion of ‘Relu’ vs ‘Sigmoid’ output function, ‘Relu’ is used after ‘Sigmoid’ has the problem of disappearing  gradient for deep structure network, like 30-100 layers. The particular example used here is actually more a ‘shallow’ network relative to the ‘deep’ one more people are used in real project these days.  So, it’s not surprised that a  ‘sigmoid’ function is fine or even better.
-Thanks!
-Yes, this gives an example:
-
-
-# mlp for regression
-Why use y = LabelEncoder().fit_transform(y)? It’s not necessary, and the prediction of yhat() is too large than y which max is 50.0,
-You’re right, looks like a bug!
-Thanks Todd.
-Updated.
-Little bug in last example:
-from:
-
-from keras.callbacks import EarlyStopping
-to:
-
-from tensorflow.keras.callbacks import EarlyStopping
-Thanks, fixed!
-Is it necessary yo set a seed before fitting the model?
-No.
-well explained and liked very much . I request you to  please write one blog using below steps?
-1) tf.keras.layers.GRUCell()
-
-2) tf.keras.layers.LSTMCell()
-
-3) tf.nn.RNNCellDropoutWrapper()
-
-4) tf.keras.layers.RNN()
-Great suggestions!
-Awesome stuff. It has very good information on TensorFlow 2. Best guide to developing deep learning models for Business intelligence .Thanks for sharing!
-Thanks!
-Nice guide! Thanks a lot!
-I have a question related to the MLP Binary Classification problem.
-During the evaluation process, i’ve changed the verbose argument to 2, and got this:
-116/1 – 0s – loss: 0.1011 – accuracy: 0.9483
-I’ve added a print command to show the test loss line:
-print(‘Test loss: %.3f’ % loss)
-
-print(‘Test Accuracy: %.3f’ % acc)
-And i’m getting this result:
-Loss Test: 0.169
-
-Test Accuracy: 0.948
-Why is it different from the reported by the evaluate function?
-You have clipped precision at 3 decimal places.
-Also, the end of epoch loss/accuracy is an average over the batches, it is better to call evaluate() at the end of the run to get a true estimate of model performance on a hold out dataset.
-Thank you so much for the blog, provides lot of information to learners
-
-Please help with more information on forecasting using RNN
-You’re welcome!
-See the tutorials here:
-
-
-Hi Jason,
-in the CNN example, wouldn’t it be MaxPool2D instead of MaxPooling2D?
-I believe you’re correct:
-
-
-thanks Jason brownlee!
-
-i am following your tutorial since i start my machine/deep learning journey, it really help me alot. Since deep learning models are becoming bigger which require multi-GPU support. It will be great if you write a tutorial on tf.keras for multi-GPU preferably some GAN model like CycleGAN or MUNIT. Thank
-Thanks for the suggestion!
-Hi Israr and Jason, yes I second that, it a tutorial for multi gpu using Keras would be awesome. That said, I am reading about issued of multi GPU not working with a number of tensorflow backend versions. Thanks, Mark
-Thanks.
-Thanks for another great post!
-
-In the functional model API section you mention that this allows for multiple input paths. My question is related to that.  The output of my MLP model will be reshaped and 2d convolved with an image (another data input midstream to the network).  How do I keep this result as a part of the overall model for further processing?  (model.add(intermediate_result)?)
-
-Thanks.
-Yes, you could have one output for each element you require, e.g. each layer that produces an output you want would be an “output” layer.
-See this:
-
-
-never mind, I figured it out, the functional API does make it easy!
-Well done!
-This blog was written so well, it filled me up with emotions!
-
-I am now doing the monthly donation. And I would suggest for everyone to give back to this awesome blog to keep it up and running!
-Thank you Jason for this fantastic initiative, you are literally creating jobs!
-Thanks!!!
-Hi
-For the input_shape parameter of a a Dense layer it seems that one can pass over a list instead of a tuple. That’s
-model.add(Dense(10, input_shape=[8]))
-Instead of:
-model.add(Dense(10, input_shape=(8,)))
-My questions are:
-Is that the same?
-
-Why is that so that both works?
-Probably it’s even possible for any layer type that has input_shape parameter (which I’ve not tested). 
-Thanks
-I think I figured it out by myself, BUT please correct me if I’m wrong. It’s happening here:
-So no matter if you pass over a list or a tuple object, the return value of:
-tuple(kwargs[‘input_shape’])
-will be always the same as a tuple object because:
->>> tuple((2,))
-
-(2,)
->>> tuple([2])
-
-(2,)
-Am I right?
-Thanks.
-Identical.
-Hi Jason
-Thanks for your reply.
-What do you mean with identical? Sorry my English is a bit poor.
-Equilivient. They do the same thing.
-Hi Jason,
-In Ionosphere data code block line 32, should it be
-
-yhat = model.predict(([row],)) instead of yhat = model.predict([row])?
-Just to match the input_shape, which is required to be a one-element tuple?
-The model expects 2d input: rows,cols or samples,features.
-Hi Jason:
-Great tutorial ! It is a good summary of different MLP, CNN and RNN models (including the datasets cases approached by simple few lines codes). Congratulations !.
-1.) Here are my results, at the time being I have only worked with Ionosphere and Iris data cases (I will continue the next ones) but, I share the first two:
-1.1) in the fist Ionosphere study Case (MLP model for Binary Classification), I apply some differences (complementing your codes) such as:
-80% training data, 10% validation data (that I included in model.fit data) and 10% test data (unseen for accuracy evaluation). Plus I add batchnormalization and dropout (0.5) layers to each of any dense layer (for regularization purposes) and I use 34 units and 8 units for the 2 hidden layers respectively.
-I got 97.2% (a little be better of yours 94.% accuracy for unseen test) and 97.3% class good for the example given
-1.2) in the second Iris study Case (MLP Multiclassification), I apply some differences (complementing your codes) such as:
-80% training data, 10% validation data (I include in model.fit data) and 10% test data (unseen for accuracy evaluation). Plus I add batchnormalization and dropout (0.5) layers to each of any dense layer (for regularization purposes) and I use 64 units, 32 units  and 8 units for the now 3 hidden layers respectively.
-I got 100.% (a little be better of yours 98.% accuracy for unseen test) and 99.9% class Iris-setosa for the example given
-2.) Here are my persistent doubts, in case you can help me:
-2.1) if applyng tf.keras new wrapper over tf. 2.x version it is only impact on change the libraries importation such as for example replacing this Keras one example:
-
-from keras.utils import plot_model
-
-for a new one using the tf.keras wrappers
-
-from tensorflow.keras.utils import plot_model
-it is highly recommended to apply tf.keras directly due to better guarantee of maintenance by Google/tensorflow team. Do you agree?
-2.2) do you expect any efficiency improvement (e.g. on execution time) using tf.keras vs keras ? I apply it but I do not see any change at all. Do you agree?
-2.3) I see you have changed loss parameter in Multiclassification (e.g. Iris study case) from previous tutorials of your from categorical_crossentropy to the new one sparse_categorical_crossentroypy. I think it is better the second one. Do you agree?
-thank you very much for make these awesome tutorials for us!!
-
-I will continue with the rest of study cases under this tutorial !
-regards
-
-JG
-Nice work, but the test/val sets are very small. I guess we should be using repeated 10 fold cross-validation.
-Yes, we should cut over to tf.keras soon:
-
-
-Not sure about efficiency differences. No.
-They do the same thing, I used the sparse loss so I didn’t have to one hot encode.
-Thanks for your valuable suggestions !
-I’m hooked on your tutorials !
-Thanks!
-Hi Jason,
-I spent some time implementing different models for  MNIST Images Digits Multiclass.
-
-Here I share my main comments:
-the 10,000 Test Image I split between 5,000 for Validation (besides training images) and another 5,000 for test (unseeing images for model.evaluate() ), so I think it is more Objetive. 
-1.) Replicating your same model architecture I got 98.3% Accuracy and, if I replace your 32 filters of your first Conv2D layer for “784” filters  I got 98.2%, but the 2 minutes CPU time goes to 45 minutes.
-2.) I define a new model with “4 blocks” of increasing number of filters [16,32,64,128] of conv2D`s plus batchnormalization+MaxPoool2D+ Dropout layers as regularizers. But I got I worst result (97.2% and 97.4% if I replace the batch size from 128 for 32).
-3.) I apply “Data Augmentation” to your model (with soft images distortion due to poor 28×28 resolution), but I got  96.7%, 97.3% and 97.9% respectively for witdth_shift_range adn similiar height_shiftrange_ arguments values of 0.1, 0.05 and 0.01. 
-3.1) But also Applying “reTrain” (from 10 epochs to 20 epochs and even 40 epochs9 where I get 98.2% Accuracy, very close to your model.
-I noticed that tensorflow.keras… apply the unique method of “model.fit() “even with ‘ImageDataGenerator’.So “model.fit_genetator()” of keras for imaging iterator is going to be deprecated !
-4.) I apply ‘transfer learning’, using VGG16.
-
-But first I have to expand each 28×28 pixels image to 32×32 (VGG16 requirement), filling with zeros the rest of rows and columns of image. I also expand from 1 channel Black/White to 3 channel (VGG16 requirement), stacking the same image 3 times ( np.stack() for the new axis) and, 
-4.1) I got a  poor result of 95.2% accuracy for frozen the whole VGG16 (5 blocks) and using only head dense layer as trainable.
-4.2) I reTraining several more epochs + 10 + 10 etc. I got moderate accuracy results such as 96.2% and 96.7%
-4.3) I decided to “defrost” (be trainable) also the last block (5º) of VGG16 and I got for 10 epoch 97.2% but I went from 2 minutes CPU time to 45 minutes and also from 52 K weights to 7.1 M trainable
-4.3)   I decided to “defrost” also the penultimate block number 4th (so 4 and 5 blocks are trainable ) and I went from 45minutes to 85 minutes of CPU and from 7.1 M parameters to 13. M trainable parameters. But I got 98.4 % Accuracy
-4.4) Finally I “reTrain” the VGG16 (defrosting 4 and 5th block) and I got for 20 more epochs and 20 more  99.4% and 99.4% also replacing ‘Adam’ optimizer by more soft “SGD” for fine tuning.
-
-At the cost of increasing cpu time goes from 45 minutes to 85 minutes.
-My conclusions are:
-a) your simple model is very efficient, and robust (without implementing any complexity such as data_augmentation)
-b)  I can beat yours result I get the best one 99.4%, at the cost fo implementing VGG16 transfer Learning, besides defrosting 4th and 5 blocks of VGG16. At the cost of more complexity and more CPU time.
-c) These models are sensitives to retrain from the 10 initial epochs up to 40 where the system does nor learn anymore.
-regards,
-
-JG
-Very cool experiments, great learnings!
-Thanks for sharing your findings.
- 
- 
- 
- 
-
-
-
-
-The 
- EBook is where I keep the 
- stuff.
-© 2019 Machine Learning Mastery Pty. Ltd. All Rights Reserved.
-
-Address: PO Box 206, Vermont Victoria 3133, Australia. | ACN: 626 223 336.
-
-
- |
-
- |
-
- |
-
- |
-
- | 
-
- | 
-
- | 
-
- |
-
- |
+ The  Deep Learning with Python  EBook is where I keep the  Really Good  stuff. Â© 2019 Machine Learning Mastery Pty. Ltd. All Rights Reserved. 
+Address: PO Box 206, Vermont Victoria 3133, Australia. | ACN: 626 223 336. 
+ LinkedIn  |
+ Twitter  |
+ Facebook  |
+ Newsletter  |
+ RSS Privacy  | 
+ Disclaimer  | 
+ Terms  | 
+ Contact  |
+ Sitemap  |
+ Search
