@@ -1,5 +1,5 @@
 import get_links
-from parse import Parser
+from text_parser import Parser
 
 import scrapy
 import networkx as nx
@@ -13,8 +13,18 @@ class TestSpider(scrapy.Spider):
 
     def __init__(self):
         super()
-        self.parser = Parser()
+        self.parser = Parser(lib_path='./lib')
         self.counter = 1
+
+        self.TAGS = {
+            'h1' : 1,
+            'h2' : 2,
+            'h3' : 3,
+            'h4' : 4,
+            'h5' : 5,
+            'h6' : 6,
+            'p' : 7
+        }
 
     def parse(self, response):
         print(response.url)
@@ -22,19 +32,20 @@ class TestSpider(scrapy.Spider):
         # with open(filename, 'wb') as f:
         #     f.write(response.body)
 
-        paragraphs = response.xpath('//p/text()').extract()
+        paragraphs = response.xpath('//p//text()').extract()
         # Initialize parser with terms
         self.parser.extract_terms('\n'.join(paragraphs))
         print(self.parser.terms)
 
         print('Building document heirarchy...')
         headings = []
-        _extract_headings(response, headings)
+        _extract_headings(response, headings, self.TAGS)
         # print(headings)
 
         # Exit function if no headers
         if len(headings) == 0:
-            return        
+            print('NO HEADINGS')
+            return
         
         tokenized_headings = []
         for tag, text in headings:
@@ -95,10 +106,9 @@ class TestSpider(scrapy.Spider):
 
         self.counter += 1
 
-def _extract_headings(response, headers=[],
-                    heading_tags=[f'h{i}' for i in range(1,7)]):
+def _extract_headings(response, headers=[], tags={}):
     """
-    generates list of headers in the dom
+    generates list of headers (+ paragraphs) in the DOM
     args:
         response: scrapy response object
         headers: list
@@ -113,17 +123,14 @@ def _extract_headings(response, headers=[],
         tag = child.xpath('name()')[0].extract()
         # print(tag)
 
-        if tag in heading_tags:
+        if tag in tags.keys():
             text = child.xpath('.//text()')
-            # print(tag, ' '.join(child.xpath('.//text()').extract()))
-            # print()
-            # print('match', child, )
             if len(text) > 0:
-                headers.append( (int(tag[1]), ' '.join(text.extract())) )
+                headers.append( (tags[tag], ' '.join(text.extract())) )
         else:
-            _extract_headings(child, headers, heading_tags)
+            _extract_headings(child, headers, tags)
 
-def _plot_tree(gr, heading_level={}, n_levels=6, savepath=None):
+def _plot_tree(gr, heading_level={}, n_levels=7, savepath=None):
     """
     Plots word heirarchy as a tree
     args:
