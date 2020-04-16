@@ -1,19 +1,24 @@
-import get_links
-from text_parser import Parser
+import sys
+sys.path.append('.')
+sys.path.append('..')
 
+from text_parser import Parser
+from ..settings import ENDPOINT_URL
+
+import os
 import scrapy
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
+from googlesearch import search
+import boto3
 
-class TestSpider(scrapy.Spider):
-    name = "test"
+class PageGraphSpider(scrapy.Spider):
+    name = "page_graph"
 
-    start_urls = get_links.get_query_links()
-
-    def __init__(self):
+    def __init__(self, category='tensorflow', nstart='10', save='False'):
         super()
-        self.parser = Parser(lib_path='./lib')
+        self.parser = Parser(lib_path='../lib')
         self.counter = 1
 
         self.TAGS = {
@@ -26,18 +31,29 @@ class TestSpider(scrapy.Spider):
             'p' : 7
         }
 
+        self.start_urls = _get_query_links(category, n=int(nstart))
+
+        self.save_results = save.lower() in ['true', '1']
+
+        # Create test results folder
+        if self.save_results and not os.path.isdir('../test_results'):
+            os.mkdir('../test_results')
+            os.mkdir('../test_results/page_graphs')
+
+        # Connect database to get entity patterns
+        self.db = boto3.resource('dynamodb', region_name='us-west-2', 
+                                endpoint_url=ENDPOINT_URL)
+        self.table = self.db.Table('Patterns')
+
     def parse(self, response):
-        print(response.url)
-        # filename = response.url.split("/")[-1] + '.html'
-        # with open(filename, 'wb') as f:
-        #     f.write(response.body)
+        print('SPIDER>', response.url)
 
         paragraphs = response.xpath('//p//text()').extract()
         # Initialize parser with terms
-        self.parser.extract_terms('\n'.join(paragraphs))
-        print(self.parser.terms)
+        _, new_patterns = self.parser.extract_terms('\n'.join(paragraphs))
+        # print(self.parser.terms)
 
-        print('Building document heirarchy...')
+        # print('Building document heirarchy...')
         headings = []
         _extract_headings(response, headings, self.TAGS)
         # print(headings)
@@ -45,19 +61,24 @@ class TestSpider(scrapy.Spider):
         # Exit function if no headers
         if len(headings) == 0:
             print('NO HEADINGS')
-            return
+            if self.save_results:
+                with open('../test_results/scraped_urls.txt', 'a', encoding='utf-8') as f:
+                    f.write(response.url + ', FALSE\n')
+                self.counter += 1
+            return None
         
         tokenized_headings = []
         for tag, text in headings:
             extracted_terms = self.parser.extract_heading_terms(text)
             if len(extracted_terms) > 0:
                 tokenized_headings.append( (tag,  extracted_terms) )
-        print(tokenized_headings)
+        # print(tokenized_headings)
 
         trees = []
         heading_levels = []
         gr = nx.DiGraph()
         level = {}
+
         for i, (tag, terms) in enumerate(tokenized_headings):
             # Find nearest largest heading
             j = i-1
@@ -93,18 +114,30 @@ class TestSpider(scrapy.Spider):
                 for a in nearest_terms:
                     for b in new_terms:
                         gr.add_edge(a, b)
+
         trees.append(gr)
         heading_levels.append(level)
 
-        # print(trees)
         idx = np.argmax([len(gr.nodes) for gr in trees])
-        filepath = f'images/{self.counter}.png'
-        _plot_tree(trees[idx], heading_levels[idx], savepath=filepath)
-        
-        with open('images.txt', 'a', encoding='utf-8') as f:
-            f.write(response.url + '\n')
+        largest_tree = trees[idx]
 
-        self.counter += 1
+        if self.save_results:            
+            filepath = f'../test_results/page_graphs/{self.counter}.png'
+            _plot_tree(largest_tree, heading_levels[idx], savepath=filepath)
+            
+            with open('../test_results/scraped_urls.txt', 'a', encoding='utf-8') as f:
+                f.write(response.url + ', TRUE\n')
+
+            self.counter += 1
+
+        return {
+            'graph' : _networkx_to_dict(largest_tree),
+            'patterns' : new_patterns
+        }
+
+        # for term in list(largest_tree.nodes):
+        #     for url in _get_query_links(term.replace('-', ' ')):
+        #         yield scrapy.Request(url, callback=self.parse)
 
 def _extract_headings(response, headers=[], tags={}):
     """
@@ -139,7 +172,7 @@ def _plot_tree(gr, heading_level={}, n_levels=7, savepath=None):
         n_levels: total number of heading levels
         savepath: file path to save drawing
     """
-    print(gr.nodes)
+    # print(gr.nodes)
     # Transpose heading level dict
     inverse_heading_level = {}
 
@@ -171,3 +204,19 @@ def _plot_tree(gr, heading_level={}, n_levels=7, savepath=None):
         plt.show()
     else:
         plt.savefig(savepath)
+
+def _get_query_links(query='tensorflow', n=10):
+	# query = input("Enter Your Query: ")
+
+	urls = []
+
+	for url in search(query, stop=n):
+		urls.append(url)
+
+	return urls
+
+def _networkx_to_dict(gr):
+    return {
+        'nodes' : list(gr.nodes),
+        'edges' : list(gr.edges)
+    }

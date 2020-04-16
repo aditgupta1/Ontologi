@@ -12,16 +12,24 @@ def capitalize_word(text):
     return text[0:1].upper() + text[1:]
 
 def get_variants(ent_id):
+    """
+    Given an entity id get capitalized and plural variants
+    """
+
     tokens = ent_id.split('-')
     capitalized_tokens = [capitalize_word(word) for word in tokens]
 
     variants = set([])
+    variants.add(' '.join(tokens))
     variants.add(' '.join(capitalized_tokens))
     variants.add(' '.join(tokens[:-1] + [inflection.pluralize(tokens[-1]),]))
     variants.add(' '.join(capitalized_tokens[:-1] + [inflection.pluralize(capitalized_tokens[-1]),]))
     return list(variants)
 
 def get_acroynm_candidates(nlp, doc):
+    """
+    Get all singular uppercase acroynms with at least two characters
+    """
     matcher = Matcher(nlp.vocab)
     pattern = [{"IS_UPPER": True}]
     matcher.add("ACROYNM", None, pattern)
@@ -231,13 +239,14 @@ def get_phrase_patterns(doc, plural_to_singular={}):
 
     return entity_patterns
 
-def extract_top_terms(text, stopwords=[], plural_to_singular={}, ratio=0.33):
+def extract_top_terms(text, stopwords=[], plural_to_singular={}, patterns=[]):
     """
     Finds the top terms. This can be either single words or bigrams.
     args:
         text: string
         stopwords: list of stopwords
         plural_to_singular: dict of (plural, singular) items
+        patterns: list of global patterns (from database)
     returns:
         list of strings
     """
@@ -255,8 +264,10 @@ def extract_top_terms(text, stopwords=[], plural_to_singular={}, ratio=0.33):
 
     entity_patterns = get_entity_patterns(nlp, doc, stopwords, plural_to_singular)
     phrase_patterns = get_phrase_patterns(doc, plural_to_singular)
-    all_patterns = _deduplicate_patterns(entity_patterns + phrase_patterns)
+    # Join new patterns with global patterns
+    all_patterns = _deduplicate_patterns(patterns + entity_patterns + phrase_patterns)
     # return all_patterns
+    pattern_hits = set([])
 
     ruler = EntityRuler(nlp)
     ruler.add_patterns(all_patterns)
@@ -266,6 +277,15 @@ def extract_top_terms(text, stopwords=[], plural_to_singular={}, ratio=0.33):
     with modified_doc.retokenize() as retokenizer:
         for ent in modified_doc.ents:
             retokenizer.merge(ent)
+            pattern_hits.add(ent.text)
+
+    # Add freq information to patterns
+    for i in range(len(all_patterns)):
+        if all_patterns[i]['pattern'] in pattern_hits:
+            if 'hits' in all_patterns[i].keys():
+                all_patterns[i]['hits'] += 1
+            else:
+                all_patterns[i]['hits'] = 1
 
     unique_term_set = set([])
     edges = {}
@@ -301,5 +321,5 @@ def extract_top_terms(text, stopwords=[], plural_to_singular={}, ratio=0.33):
     calculated_page_rank = nx.pagerank(gr, weight='weight')
     sorted_terms = sorted(calculated_page_rank, key=calculated_page_rank.get,reverse=True)
 
-    return sorted_terms[:len(sorted_terms) // 3], nlp
+    return sorted_terms[:len(sorted_terms) // 3], nlp, all_patterns
     

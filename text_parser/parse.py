@@ -13,7 +13,7 @@ class Parser(object):
         with open(os.path.join(lib_path, 'plural_to_singular.json'), 'r') as f:
             self.plural_to_singular = json.load(f)
 
-    def extract_terms(self, text):
+    def extract_terms(self, text, patterns=[]):
         """
         Extracts keywords/phrases given string text
         args:
@@ -22,11 +22,12 @@ class Parser(object):
         returns:
             list of top terms
         """
-        self.terms, self.nlp = extract_top_terms(text, stopwords=self.stopwords, 
-                                        plural_to_singular=self.plural_to_singular)
+        self.terms, self.nlp, all_patterns = extract_top_terms(text, stopwords=self.stopwords, 
+                                        plural_to_singular=self.plural_to_singular,
+                                        patterns=[])
         print('Top terms extracted successfully!')
 
-        return self.terms
+        return self.terms, all_patterns
 
     def extract_heading_terms(self, text):
         """
