@@ -5,10 +5,12 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 
-from .settings import ENDPOINT_URL
+from .settings import DYNAMODB_URL, NEO4J_URL, NEO4J_PSWD
 
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
+from py2neo import Graph, Node, Relationship
+
 import time
 
 class GraphPipeline(object):
@@ -17,22 +19,25 @@ class GraphPipeline(object):
     """
     
     def __init__(self):
-        self.db = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url=ENDPOINT_URL)
-        self.table = self.db.Table('Entities')
+        self.dynamodb = boto3.resource('dynamodb', region_name='us-west-2', 
+                                        endpoint_url=DYNAMODB_URL)
+        self.entities_table = self.dynamodb.Table('Entities')
+        self.graph = Graph(NEO4J_URL, password=NEO4J_PSWD)
 
     def process_item(self, item, spider):
         graph = item['graph']
         # print('pipelines:25>', graph['nodes'])
 
+        # DynamoDB
         for ent in graph['nodes']:
-            db_response = self.table.get_item(
+            db_response = self.entities_table.get_item(
                 Key={
                     'name': ent,
                 }
             )
             
             if 'Item' in db_response.keys():
-                self.table.update_item(
+                self.entities_table.update_item(
                     Key={
                         'name': ent,
                     },
@@ -42,13 +47,20 @@ class GraphPipeline(object):
                     }
                 )
             else:
-                self.table.put_item(
+                self.entities_table.put_item(
                     Item={
                         'name': ent,
                         'freq': 1
                     }
                 )
 
+        # Neo4j
+        for edge in graph['edges']:
+            a = Node('Concept', name=edge[0])
+            b = Node('Concept', name=edge[1])
+            rel = Relationship(a, b)
+            self.graph.merge(rel, 'Concept', 'name')
+            
         return item
 
 class PatternsPipeline(object):
@@ -58,7 +70,8 @@ class PatternsPipeline(object):
     """
 
     def __init__(self):
-        self.db = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url=ENDPOINT_URL)
+        self.db = boto3.resource('dynamodb', region_name='us-west-2', 
+                                endpoint_url=DYNAMODB_URL)
         self.table = self.db.Table('Patterns')
 
     def process_item(self, item, spider):

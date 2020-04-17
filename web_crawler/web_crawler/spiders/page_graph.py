@@ -3,7 +3,7 @@ sys.path.append('.')
 sys.path.append('..')
 
 from text_parser import Parser
-from ..settings import ENDPOINT_URL
+from ..settings import DYNAMODB_URL
 
 import os
 import scrapy
@@ -42,7 +42,7 @@ class PageGraphSpider(scrapy.Spider):
 
         # Connect database to get entity patterns
         self.db = boto3.resource('dynamodb', region_name='us-west-2', 
-                                endpoint_url=ENDPOINT_URL)
+                                endpoint_url=DYNAMODB_URL)
         self.table = self.db.Table('Patterns')
 
     def parse(self, response):

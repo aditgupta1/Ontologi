@@ -93,4 +93,6 @@ ITEM_PIPELINES = {
 
 
 # DB settings
-ENDPOINT_URL = "http://localhost:5000"
+DYNAMODB_URL = "http://localhost:5000"
+NEO4J_URL = 'bolt://localhost:7687'
+NEO4J_PSWD = 'pswd'

@@ -1,0 +1,10 @@
+https://en.wikipedia.org/wiki/TensorFlow, TRUE
+https://github.com/tensorflow/tensorflow, TRUE
+https://tensorflow.rstudio.com/, TRUE
+https://github.com/tensorflow, TRUE
+https://twitter.com/TensorFlow/status/1251166389114531845?ref_src=twsrc%5Egoogle%7Ctwcamp%5Eserp%7Ctwgr%5Etweet, TRUE
+https://twitter.com/TensorFlow/status/1251216355933728768?ref_src=twsrc%5Egoogle%7Ctwcamp%5Eserp%7Ctwgr%5Etweet, TRUE
+https://twitter.com/TensorFlow?ref_src=twsrc%5Egoogle%7Ctwcamp%5Eserp%7Ctwgr%5Eauthor, TRUE
+https://twitter.com/TensorFlow/status/1250842443232079873?ref_src=twsrc%5Egoogle%7Ctwcamp%5Eserp%7Ctwgr%5Etweet, TRUE
+https://www.youtube.com/channel/UC0rqucBdTuFTjJiefW5t-IQ, TRUE
+https://www.tensorflow.org/, TRUE
