@@ -71,7 +71,7 @@ class RequestBouncerDownloaderMiddleware(object):
         """
         self.db = boto3.resource('dynamodb', region_name='us-west-2', 
                                 endpoint_url=DYNAMODB_URL)
-        self.table = self.db.Table('Sites')
+        self.table = self.db.Table('Pages')
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -91,11 +91,13 @@ class RequestBouncerDownloaderMiddleware(object):
         # - or raise IgnoreRequest: process_exception() methods of
         #   installed downloader middleware will be called
 
-        db_response = self.table.query(
-            KeyConditionExpression=Key('url').eq(request.url)
+        db_response = self.table.get_item(
+            Key={
+                'url' : request.url
+            }
         )
-        if len(db_response['Items']) > 0:
-            print('97> IGNORE_REQUEST', request.url)
+        if 'Item' in db_response.keys():
+            print('middlewares:98> IGNORE REQUEST', request.url)
             raise exceptions.IgnoreRequest
 
         return None
@@ -107,12 +109,15 @@ class RequestBouncerDownloaderMiddleware(object):
         # - return a Response object
         # - return a Request object
         # - or raise IgnoreRequest
-        db_response = self.table.put_item(
-            Item={
-                'url': request.url
+        db_response = self.table.get_item(
+            Key={
+                'url' : response.url
             }
         )
-        print('PUT>', request.url, response.url, db_response)
+        if 'Item' in db_response.keys():
+            print('middlewares:118> IGNORE RESPONSE', response.url)
+            raise exceptions.IgnoreRequest
+
         return response
 
     def process_exception(self, request, exception, spider):

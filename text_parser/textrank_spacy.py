@@ -227,9 +227,9 @@ def get_top_phrases(doc, keywords, k=2):
 
 def get_phrase_patterns(doc, plural_to_singular={}):
     keywords = get_keywords(doc)
-    # print(keywords)
+    print('textrank:230>', keywords)
     bigrams = get_top_phrases(doc, keywords[:len(keywords)//10], k=2)
-    # print(bigrams)
+    print('textrank:232>', bigrams)
 
     entity_patterns = []
     for phrase in bigrams:

@@ -24,7 +24,7 @@ class Parser(object):
         """
         self.terms, self.nlp, all_patterns = extract_top_terms(text, stopwords=self.stopwords, 
                                         plural_to_singular=self.plural_to_singular,
-                                        patterns=[])
+                                        patterns=patterns)
         print('Top terms extracted successfully!')
 
         return self.terms, all_patterns

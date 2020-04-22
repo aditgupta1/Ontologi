@@ -46,11 +46,19 @@ class PageGraphSpider(scrapy.Spider):
         self.table = self.db.Table('Patterns')
 
     def parse(self, response):
-        print('SPIDER>', response.url)
+        print('page_graph:49>', response.url)
 
+        # Get paragraph text
         paragraphs = response.xpath('//p//text()').extract()
+
         # Initialize parser with terms
-        _, new_patterns = self.parser.extract_terms('\n'.join(paragraphs))
+        # Get patterns from database
+        db_response = self.table.scan()
+        patterns = []
+        for it in db_response['Items']:
+            patterns.append({'label':'CUSTOM', 'pattern':it['pattern'], 'id':it['id']})
+        _, new_patterns = self.parser.extract_terms('\n'.join(paragraphs), 
+                                                    patterns=patterns)
         # print(self.parser.terms)
 
         # print('Building document heirarchy...')
@@ -132,7 +140,8 @@ class PageGraphSpider(scrapy.Spider):
 
         return {
             'graph' : _networkx_to_dict(largest_tree),
-            'patterns' : new_patterns
+            'patterns' : new_patterns,
+            'url' : response.url
         }
 
         # for term in list(largest_tree.nodes):
