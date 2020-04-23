@@ -16,19 +16,19 @@ graph = Graph('bolt://localhost:7687', password='pswd')
 
 # Match node
 # query = 'MATCH (a:Concept) WHERE a.name = "tensorflow" RETURN a.name AS name, a.weight AS weight'
-query = 'MATCH (a:Concept)-[r]->(b:Concept)' \
-        'WHERE a.name = "announcement" AND b.name = "tensorflow"' \
-        'RETURN r.weight AS weight'
+# query = 'MATCH (a:Concept)-[r]->(b:Concept)' \
+#         'WHERE a.name = "announcement" AND b.name = "tensorflow"' \
+#         'RETURN r.weight AS weight'
 
-cursor = graph.run(query)
-print(cursor.data())
-for record in cursor:
-    print(record)
+# cursor = graph.run(query)
+# print(cursor.data())
+# for record in cursor:
+#     print(record)
 
 # Get all nodes
 data = graph.run('MATCH (p:Concept) RETURN p.weight AS weight').data()
 weights = [x['weight'] for x in data]
-
+print('Nodes:', len(data))
 plt.hist(weights, bins=20)
 plt.show()
 

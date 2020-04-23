@@ -25,3 +25,35 @@ scrapy crawl page_graph -L ERROR -a save=True
 ## Data Storage
 
 Currently using local DynamoDB instance, but can easily be integrated with AWS remote DynamoDB by changing the ```endpoint_url``` argument when accessing database.
+
+## Notes
+
+BFO vs DFO
+https://docs.scrapy.org/en/latest/faq.html#faq-bfo-dfo
+
+## Deploy Scrapyd
+
+https://www.youtube.com/watch?v=PZKH5S0C8EI
+
+Install scrapyd:
+
+```
+pip install scrapyd-client
+```
+
+https://github.com/scrapy/scrapyd-client
+
+```
+cd web_crawler
+# Start localhost
+scrapyd
+# Start project
+scrapyd-deploy local
+
+# Generic
+curl http://localhost:6800/schedule.json -d project=myproject -d spider=somespider -d setting=DOWNLOAD_DELAY=2 -d arg1=val1
+# Page Graph
+curl http://localhost:6800/schedule.json -d project=web_crawler -d spider=page_graph -d url_path=urls/spider_1.txt -d save=True
+```
+
+Commands: https://scrapyd.readthedocs.io/en/latest/api.html

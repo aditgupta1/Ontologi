@@ -160,8 +160,8 @@ if __name__ == '__main__':
     # print(list(db.tables.all()))
 
     # Get all items
-    response = entities_table.scan()
-    print('Entities:', len(response['Items']))
+    response = patterns_table.scan()
+    print('Patterns:', len(response['Items']))
 
     # Get query
     # response = sites_table.query(
