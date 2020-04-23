@@ -19,6 +19,7 @@ Only show error logs:
 
 ```
 scrapy crawl page_graph -L ERROR
+scrapy crawl page_graph -L ERROR -a save=True
 ```
 
 ## Data Storage

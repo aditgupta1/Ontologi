@@ -4,19 +4,20 @@ sys.path.append('..')
 
 from text_parser import Parser
 from ..settings import DYNAMODB_URL
+from .utils import GoogleSearch
 
 import os
 import scrapy
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
-from googlesearch import search
+# from googlesearch import search
 import boto3
 
 class PageGraphSpider(scrapy.Spider):
     name = "page_graph"
 
-    def __init__(self, category='tensorflow', nstart='10', save='False'):
+    def __init__(self, category='tensorflow', nstart='10', save='False', follow='True'):
         super()
         self.parser = Parser(lib_path='../lib')
         self.counter = 1
@@ -31,14 +32,19 @@ class PageGraphSpider(scrapy.Spider):
             'p' : 7
         }
 
-        self.start_urls = _get_query_links(category, n=int(nstart))
+        # Google search results
+        self.googlesearch = GoogleSearch()
+        self.start_urls = self.googlesearch.search(category, num_results=int(nstart))
 
         self.save_results = save.lower() in ['true', '1']
+        self.follow_links = follow.lower() in ['true', '1']
 
         # Create test results folder
-        if self.save_results and not os.path.isdir('../test_results'):
-            os.mkdir('../test_results')
-            os.mkdir('../test_results/page_graphs')
+        if self.save_results:
+            if not os.path.isdir('../test_results'):
+                os.mkdir('../test_results')
+            if not os.path.isdir('../test_results/page_graphs'):
+                os.mkdir('../test_results/page_graphs')
 
         # Connect database to get entity patterns
         self.db = boto3.resource('dynamodb', region_name='us-west-2', 
@@ -46,7 +52,7 @@ class PageGraphSpider(scrapy.Spider):
         self.table = self.db.Table('Patterns')
 
     def parse(self, response):
-        print('page_graph:49>', response.url)
+        # print('page_graph:49>', response.url)
 
         # Get paragraph text
         paragraphs = response.xpath('//p//text()').extract()
@@ -57,7 +63,7 @@ class PageGraphSpider(scrapy.Spider):
         patterns = []
         for it in db_response['Items']:
             patterns.append({'label':'CUSTOM', 'pattern':it['pattern'], 'id':it['id']})
-        _, new_patterns = self.parser.extract_terms('\n'.join(paragraphs), 
+        _, new_patterns = self.parser.extract_terms(' '.join(paragraphs), 
                                                     patterns=patterns)
         # print(self.parser.terms)
 
@@ -68,7 +74,7 @@ class PageGraphSpider(scrapy.Spider):
 
         # Exit function if no headers
         if len(headings) == 0:
-            print('NO HEADINGS')
+            # print('NO HEADINGS')
             if self.save_results:
                 with open('../test_results/scraped_urls.txt', 'a', encoding='utf-8') as f:
                     f.write(response.url + ', FALSE\n')
@@ -138,15 +144,16 @@ class PageGraphSpider(scrapy.Spider):
 
             self.counter += 1
 
-        return {
+        yield {
             'graph' : _networkx_to_dict(largest_tree),
             'patterns' : new_patterns,
             'url' : response.url
         }
 
-        # for term in list(largest_tree.nodes):
-        #     for url in _get_query_links(term.replace('-', ' ')):
-        #         yield scrapy.Request(url, callback=self.parse)
+        if self.follow_links:
+            for term in list(largest_tree.nodes):
+                for url in self.googlesearch.search(term.replace('-', ' ')):
+                    yield scrapy.Request(url, callback=self.parse)
 
 def _extract_headings(response, headers=[], tags={}):
     """
@@ -214,15 +221,15 @@ def _plot_tree(gr, heading_level={}, n_levels=7, savepath=None):
     else:
         plt.savefig(savepath)
 
-def _get_query_links(query='tensorflow', n=10):
-	# query = input("Enter Your Query: ")
+# def _get_query_links(query='tensorflow', n=10):
+# 	# query = input("Enter Your Query: ")
 
-	urls = []
+# 	urls = []
 
-	for url in search(query, stop=n):
-		urls.append(url)
+# 	for url in search(query, stop=n):
+# 		urls.append(url)
 
-	return urls
+# 	return urls
 
 def _networkx_to_dict(gr):
     return {

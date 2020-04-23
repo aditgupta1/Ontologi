@@ -1,10 +1,2 @@
-https://en.wikipedia.org/wiki/TensorFlow, TRUE
-https://en.wikipedia.org/wiki/TensorFlow, TRUE
-https://en.wikipedia.org/wiki/TensorFlow, TRUE
-https://en.wikipedia.org/wiki/TensorFlow, TRUE
-https://en.wikipedia.org/wiki/TensorFlow, TRUE
-https://github.com/tensorflow/tensorflow, TRUE
 https://www.tensorflow.org/, TRUE
-https://twitter.com/TensorFlow/status/1252643515336544256?ref_src=twsrc%5Egoogle%7Ctwcamp%5Eserp%7Ctwgr%5Etweet, TRUE
-https://twitter.com/TensorFlow/status/1252271686247825410?ref_src=twsrc%5Egoogle%7Ctwcamp%5Eserp%7Ctwgr%5Etweet, TRUE
-https://twitter.com/TensorFlow?ref_src=twsrc%5Egoogle%7Ctwcamp%5Eserp%7Ctwgr%5Eauthor, TRUE
+https://github.com/tensorflow/tensorflow, TRUE

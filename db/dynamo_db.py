@@ -1,7 +1,6 @@
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 import argparse
-import matplotlib.pyplot as plt
 
 def get_pages_table(db):
     """
@@ -176,45 +175,6 @@ if __name__ == '__main__':
     # items = response['Items']
     # print(items)
 
-    # response = entities_table.query(
-    #     IndexName='FreqIndex',
-    #     KeyConditionExpression=Key('freq').eq(0)
-    # )
-    # items = response['Items']
-    # print(items)
-
-    # response = entities_table.scan()
-    # max_freq = max([int(it['freq']) for it in response['Items']])
-    # freq_dist = [0] * (max_freq + 1)
-    # for it in response['Items']:
-    #     freq_dist[int(it['freq'])] += 1
-
-    # # Insert graph into Pages Table
-    # pages_table.put_item(
-    #     Item={
-    #         'url' : 'test.com',
-    #         'graph' : [1,2,3]
-    #     }
-    # )
-
-    # response = pages_table.get_item(
-    #     Key={
-    #         'url' : 'test.com'
-    #     }
-    # )
-    # print(response)
-
-    # pages_table.update_item(
-    #     Key={
-    #         'url': 'https://en.wikipedia.org/wiki/TensorFlow'
-    #     },
-    #     UpdateExpression='SET nodes = :val1, edges = :val2',
-    #     ExpressionAttributeValues={
-    #         ':val1' : ['tensorflow'],
-    #         ':val2' : ['tensorflow gpu']
-    #     }
-    # )
-
     # print(pages_table.get_item(
     #     Key={
     #         'url' : 'https://en.wikipedia.org/wiki/TensorFlow'
@@ -227,11 +187,3 @@ if __name__ == '__main__':
         entities_table.delete()
         patterns_table.delete()
         print('Tables deleted successfully!')
-
-    # Get item
-    # db_response = entities_table.get_item(
-    #     Key={
-    #         'name': 'tensorflow',
-    #     }
-    # )
-    # print(db_response)

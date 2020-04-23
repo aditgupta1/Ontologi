@@ -300,6 +300,7 @@ def extract_top_terms(text, stopwords=[], plural_to_singular={}, patterns=[]):
                 else:
                     noun = token.lemma_
     #             print(token.lemma_)
+                noun = noun.replace('"', "'")
                 if noun not in noun_list:
                     noun_list.append(noun)
         # print(noun_list)

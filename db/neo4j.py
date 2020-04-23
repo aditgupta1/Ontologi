@@ -1,5 +1,6 @@
 from py2neo import Graph, Node, Relationship, NodeMatcher
 import argparse
+import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--delete', action='store_true', 
@@ -25,9 +26,19 @@ for record in cursor:
     print(record)
 
 # Get all nodes
-cursor = graph.run('MATCH (p) RETURN p')
-for record in cursor:
-    print(record)
+data = graph.run('MATCH (p:Concept) RETURN p.weight AS weight').data()
+weights = [x['weight'] for x in data]
+
+plt.hist(weights, bins=20)
+plt.show()
+
+# print('35>', graph.run('MATCH (p:Concept) WHERE p.name="requirement" RETURN p').data())
+
+# # a = Node('Concept', name='requirement')
+# # graph.delete(a)
+# graph.run('MATCH (p) WHERE p.name="requirement" DETACH DELETE p')
+
+# print('40>', graph.run('MATCH (p:Concept) WHERE p.name="requirement" RETURN p').data())
 
 if args.delete:
     graph.run('MATCH (p) DETACH DELETE p')
