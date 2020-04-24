@@ -35,33 +35,6 @@ class DBStorePipeline(object):
         graph = item['graph']
         # print('pipelines:34>', graph['nodes'])
 
-        # '''Add entities'''
-        # for ent in graph['nodes']:
-        #     db_response = self.entities_table.get_item(
-        #         Key={
-        #             'name': ent,
-        #         }
-        #     )
-            
-        #     if 'Item' in db_response.keys():
-        #         self.entities_table.update_item(
-        #             Key={
-        #                 'name': ent,
-        #             },
-        #             UpdateExpression='SET freq = :val',
-        #             ExpressionAttributeValues={
-        #                 ':val': int(db_response['Item']['freq']) + 1
-        #             }
-        #         )
-        #     else:
-        #         self.entities_table.put_item(
-        #             Item={
-        #                 'name': ent,
-        #                 'freq': 1,
-        #                 'timestamp' : int(time.time()) # Timestamp created
-        #             }
-        #         )
-
         '''Add nodes to graph'''
         for node in graph['nodes']:
             # Find node if exists
