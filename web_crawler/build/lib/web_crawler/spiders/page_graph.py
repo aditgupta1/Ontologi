@@ -12,11 +12,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 # from googlesearch import search
 import boto3
+import time
 
 class PageGraphSpider(scrapy.Spider):
     name = "page_graph"
 
     def __init__(self, *args, **kwargs):
+        """
+        kwargs:
+            url_path: path to list of urls to scrape
+            save_name: (optional) spider name to save graphs and urls
+        """
+        
         super().__init__(*args, **kwargs)
         self.parser = Parser(lib_path='../lib')
         self.counter = 1
@@ -35,15 +42,12 @@ class PageGraphSpider(scrapy.Spider):
         self.start_urls = [x.strip('\n') for x in start_urls]
         print(self.start_urls)
 
-        save = kwargs['save'] if 'save' in kwargs.keys() else 'False'
-        self.save_results = save.lower() in ['true', '1']
-
-        # Create test results folder
-        if self.save_results:
-            if not os.path.isdir('../test_results'):
-                os.mkdir('../test_results')
-            if not os.path.isdir('../test_results/page_graphs'):
-                os.mkdir('../test_results/page_graphs')
+        if 'save_name' in kwargs.keys():
+            # Create test results folder
+            self.save_dir = f'../test_results/{kwargs["save_name"]}'
+            os.makedirs(os.path.join(self.save_dir, 'page_graphs'), exist_ok=True)
+        else:
+            self.save_dir = None
 
         # Connect database to get entity patterns
         self.db = boto3.resource('dynamodb', region_name='us-west-2', 
@@ -51,20 +55,26 @@ class PageGraphSpider(scrapy.Spider):
         self.table = self.db.Table('Patterns')
 
     def parse(self, response):
-        # print('page_graph:49>', response.url)
+        print('page_graph:49>', response.url)
 
         # Get paragraph text
         paragraphs = response.xpath('//p//text()').extract()
+        body_text = ' '.join(paragraphs).replace('\n', ' ')
 
         # Initialize parser with terms
         # Get patterns from database
+        start = time.time()
         db_response = self.table.scan()
+        print('page_graph:65>', time.time() - start)
         patterns = []
         for it in db_response['Items']:
             patterns.append({'label':'CUSTOM', 'pattern':it['pattern'], 'id':it['id']})
-        _, new_patterns = self.parser.extract_terms(' '.join(paragraphs), 
-                                                    patterns=patterns)
+        print('page_graph:69>', time.time() - start)
+        print('page_graph:69> #patterns', len(patterns))
+        
+        _, new_patterns = self.parser.extract_terms(body_text, patterns=patterns)
         # print(self.parser.terms)
+        print('page_graph:72>', time.time() - start)
 
         # print('Building document heirarchy...')
         headings = []
@@ -74,8 +84,8 @@ class PageGraphSpider(scrapy.Spider):
         # Exit function if no headers
         if len(headings) == 0:
             # print('NO HEADINGS')
-            if self.save_results:
-                with open('../test_results/scraped_urls.txt', 'a', encoding='utf-8') as f:
+            if self.save_dir is not None:
+                with open(os.path.join(self.save_dir, 'scraped_urls.txt'), 'a', encoding='utf-8') as f:
                     f.write(response.url + ', FALSE\n')
                 self.counter += 1
             return None
@@ -134,11 +144,11 @@ class PageGraphSpider(scrapy.Spider):
         idx = np.argmax([len(gr.nodes) for gr in trees])
         largest_tree = trees[idx]
 
-        if self.save_results:            
-            filepath = f'../test_results/page_graphs/{self.counter}.png'
+        if self.save_dir is not None:            
+            filepath = os.path.join(self.save_dir, f'page_graphs/{self.counter}.png')
             _plot_tree(largest_tree, heading_levels[idx], savepath=filepath)
             
-            with open('../test_results/scraped_urls.txt', 'a', encoding='utf-8') as f:
+            with open(os.path.join(self.save_dir, 'scraped_urls.txt'), 'a', encoding='utf-8') as f:
                 f.write(response.url + ', TRUE\n')
 
             self.counter += 1
@@ -148,11 +158,6 @@ class PageGraphSpider(scrapy.Spider):
             'patterns' : new_patterns,
             'url' : response.url
         }
-
-        # if self.follow_links:
-        #     for term in list(largest_tree.nodes):
-        #         for url in self.googlesearch.search(term.replace('-', ' ')):
-        #             yield scrapy.Request(url, callback=self.parse)
 
 def _extract_headings(response, headers=[], tags={}):
     """

@@ -10,6 +10,7 @@ from .settings import DYNAMODB_URL, NEO4J_URL, NEO4J_PSWD
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 from py2neo import Graph, Node, Relationship
+from py2neo.database import TransientError
 
 import os
 import time
@@ -36,70 +37,38 @@ class DBStorePipeline(object):
         # print('pipelines:34>', graph['nodes'])
 
         '''Add nodes to graph'''
-        for node in graph['nodes']:
-            # Find node if exists
-            n_match = _match_node(self.graph, 'Concept', node)
-            # print('67>', n_match)
-            if n_match is None:
-                n = Node('Concept', name=node, weight=1, timestamp=timestamp())
-            else:
-                n = Node('Concept', name=node, weight=n_match['weight']+1, 
-                        timestamp=n_match['timestamp'])
-            self.graph.merge(n, 'Concept', 'name')
+        start = time.time()
+        query = "UNWIND $nodes AS node " \
+            'MERGE (n:Concept {name: node}) ' \
+            "ON CREATE SET n.weight = 1, n.timestamp = $timestamp " \
+            "ON MATCH SET n.weight = n.weight + 1"
+        self.execute(query, nodes=graph['nodes'], timestamp=timestamp())
 
-        for edge in graph['edges']:
-            a_match = _match_node(self.graph, 'Concept', edge[0])
-            a = Node('Concept', name=edge[0], weight=a_match['weight'],
-                    timestamp=a_match['timestamp'])
-            b_match = _match_node(self.graph, 'Concept', edge[1])
-            b = Node('Concept', name=edge[1], weight=b_match['weight'],
-                    timestamp=b_match['timestamp'])
-            
-            # Find relationship if exists
-            rel_match = _match_relationship(self.graph, 'Concept', edge[0], edge[1])
-            # print('79>', rel_match, a, b)
-            
-            if rel_match is None:
-                rel = Relationship(a, b, weight=1)
-            else:
-                rel = Relationship(a, b, weight=rel_match['weight']+1)
+        '''Add edges to graph'''
+        query = 'UNWIND $edges AS edge ' \
+            'MATCH (a:Concept {name: edge[0]}) ' \
+            'MATCH (b:Concept {name: edge[1]}) ' \
+            "MERGE (a)-[r:HAS]->(b) " \
+            "ON CREATE SET r.weight = 1, r.timestamp = $timestamp " \
+            "ON MATCH SET r.weight = r.weight + 1"
+        self.execute(query, edges=graph['edges'], timestamp=timestamp())
 
-            self.graph.merge(rel, 'Concept', 'name')
+        # print('pipelines:69>', time.time() - start, 'nodes:', len(graph['nodes']), 'edges:', len(graph['edges']))
 
         '''Add new patterns'''
         patterns = item['patterns']
         # print('pipelines:75>', len(patterns))
 
-        for pat in patterns:
-            db_response = self.patterns_table.get_item(
-                Key={
-                    'id': pat['id'],
-                    'pattern' : pat['pattern']
-                }
-            )
-            # print(db_response, 'Item' in db_response.keys())
-            if 'Item' in db_response.keys():
-                if 'hits' in pat.keys():
-                    self.patterns_table.update_item(
-                        Key={
-                            'id': pat['id'],
-                            'pattern' : pat['pattern']
-                        },
-                        UpdateExpression='SET freq = :val',
-                        ExpressionAttributeValues={
-                            ':val': int(db_response['Item']['freq']) + 1
-                        }
-                    )
-            else:
+        with self.patterns_table.batch_writer() as batch:
+            for pat in patterns:
                 # print('pipelines:98>', pat['id'], pat['pattern'])
-                freq = 1 if 'hits' in pat.keys() else 0
-                self.patterns_table.put_item(
+                batch.put_item(
                     Item={
                         'id': pat['id'],
                         'pattern' : pat['pattern'],
-                        'freq' : freq
                     }
                 )
+        # print('pipelines:105>', time.time() - start)
 
         '''Add graph to Pages table
         If exists already, subtract old nodes/edges from global graph and
@@ -111,24 +80,18 @@ class DBStorePipeline(object):
         )
         if 'Item' in db_response.keys():
             # Subtract old nodes
-            for node in db_response['Item']['nodes']:
-                n_match = _match_node(self.graph, 'Concept', node)
-                n = Node('Concept', name=node, weight=n_match['weight']-1,
-                        timestamp=n_match['timestamp'])
-                self.graph.merge(n, 'Concept', 'name')
-            # Subtract old edges
-            for edge in db_response['Item']['edges']:
-                name1, name2 = edge.split(' ')
-                a_match = _match_node(self.graph, 'Concept', name1)
-                a = Node('Concept', name=name1, weight=a_match['weight'],
-                        timestamp=a_match['timestamp'])
-                b_match = _match_node(self.graph, 'Concept', name2)
-                b = Node('Concept', name=name2, weight=b_match['weight'],
-                        timestamp=b_match['timestamp'])
+            query = "UNWIND $nodes AS node " \
+                'MERGE (n:Concept {name: node}) ' \
+                "ON MATCH SET n.weight = n.weight - 1"
+            self.execute(query, nodes=db_response['Item']['nodes'])
 
-                rel_match = _match_relationship(self.graph, 'Concept', name1, name2)
-                rel = Relationship(a, b, weight=rel_match['weight']-1)                    
-                self.graph.merge(rel, 'Concept', 'name')
+            # Subtract old edges
+            query = 'UNWIND $edges AS edge ' \
+                'MATCH (a:Concept {name: edge[0]}) ' \
+                'MATCH (b:Concept {name: edge[1]}) ' \
+                "MERGE (a)-[r:HAS]->(b) " \
+                "ON MATCH SET r.weight = r.weight - 1"
+            self.execute(query, edges=db_response['Item']['edges'])
 
             # Updated pages table
             self.pages_table.update_item(
@@ -149,8 +112,28 @@ class DBStorePipeline(object):
                     'edges' : [' '.join(edge) for edge in graph['edges']]
                 }
             )
+        # print('pipelines:155>', time.time() - start)
 
         return item
+
+    def execute(self, query, **kwargs):
+        """
+        Handle database deadlocks
+        Try up to 4 times before finally quiting
+        Sleep for 1 second before retrying
+        """
+        
+        num_tries = 0
+        while num_tries < 4:
+            try:
+                self.graph.run(query, **kwargs)
+                return
+            except TransientError:
+                print('WARNING: TransientError database deadlock (retrying)')
+                num_tries += 1
+                time.sleep(0.5)
+        
+        print('ERROR: TransientError database deadlock (quit after 4 tries)')
 
 class DBPrunePipeline(object):
     """
@@ -220,24 +203,7 @@ class DBPrunePipeline(object):
             ent_name = ent['name']
             self.graph.run(f'MATCH (p:Concept) WHERE p.name="{ent_name}" DETACH DELETE p')
             
-        return item
-
-def _match_node(graph, label, name):
-    query = f'MATCH (a:{label}) WHERE a.name = "{name}" ' \
-        'RETURN a.name AS name, a.weight AS weight, a.timestamp AS timestamp'
-    data = graph.run(query).data()
-    if len(data) == 0:
-        return None
-    return data[0]
-
-def _match_relationship(graph, label, name1, name2):
-    query = f'MATCH (a:{label})-[r]->(b:{label})' \
-        f'WHERE a.name = "{name1}" AND b.name = "{name2}"' \
-        'RETURN r.weight AS weight'
-    data = graph.run(query).data()
-    if len(data) == 0:
-        return None
-    return data[0]
+        return item         
 
 def timestamp(delay=0):
     return int(time.time()) - delay

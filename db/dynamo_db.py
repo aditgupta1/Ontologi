@@ -1,6 +1,7 @@
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 import argparse
+import time
 
 def get_pages_table(db):
     """
@@ -84,6 +85,8 @@ def get_patterns_table(db):
     """
     This table stores entity patterns for named entity recognition (NER) 
     when parsing text.
+    Only store patterns that have occurred to save space, then construct
+    variants on the fly
     """
     try:
         patterns_table = db.create_table(
@@ -107,29 +110,29 @@ def get_patterns_table(db):
                     'AttributeName': 'pattern',
                     'AttributeType': 'S'
                 },
-                {
-                    'AttributeName': 'freq',
-                    'AttributeType': 'N'
-                }
+                # {
+                #     'AttributeName': 'freq',
+                #     'AttributeType': 'N'
+                # }
             ],
-            GlobalSecondaryIndexes=[
-                {
-                    'IndexName': 'FreqIndex',
-                    'KeySchema': [
-                        {
-                            'AttributeName': 'freq',
-                            'KeyType': 'HASH'
-                        }
-                    ],
-                    'Projection': {
-                        'ProjectionType': 'ALL'
-                    },
-                    'ProvisionedThroughput': {
-                        'ReadCapacityUnits': 1,
-                        'WriteCapacityUnits': 1
-                    }
-                }
-            ],
+            # GlobalSecondaryIndexes=[
+            #     {
+            #         'IndexName': 'FreqIndex',
+            #         'KeySchema': [
+            #             {
+            #                 'AttributeName': 'freq',
+            #                 'KeyType': 'HASH'
+            #             }
+            #         ],
+            #         'Projection': {
+            #             'ProjectionType': 'ALL'
+            #         },
+            #         'ProvisionedThroughput': {
+            #             'ReadCapacityUnits': 1,
+            #             'WriteCapacityUnits': 1
+            #         }
+            #     }
+            # ],
             ProvisionedThroughput={
                 'ReadCapacityUnits': 1,
                 'WriteCapacityUnits': 1
@@ -175,12 +178,15 @@ if __name__ == '__main__':
     # items = response['Items']
     # print(items)
 
-    # print(pages_table.get_item(
+    # start = time.time()
+    # response = pages_table.get_item(
     #     Key={
     #         'url' : 'https://en.wikipedia.org/wiki/TensorFlow'
     #     }
-    # ))
-
+    # )
+    # print(time.time() - start)
+    # print(response)
+    
     # Delete tables
     if args.delete:
         pages_table.delete()

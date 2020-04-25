@@ -1,0 +1,3 @@
+https://en.wikipedia.org/wiki/TensorFlow, TRUE
+https://aws.amazon.com/tensorflow/, TRUE
+https://medium.com/tensorflow, TRUE
