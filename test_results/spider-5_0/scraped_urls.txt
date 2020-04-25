@@ -1,0 +1,2 @@
+https://www.infoworld.com/article/3278008/what-is-tensorflow-the-machine-learning-library-explained.html, TRUE
+https://hub.docker.com/r/tensorflow/tensorflow/, FALSE

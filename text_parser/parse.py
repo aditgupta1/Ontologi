@@ -3,13 +3,22 @@ from .textrank_spacy import extract_top_terms
 import nltk
 import json
 import os
+import spacy
 
 class Parser(object):
     def __init__(self, lib_path='.'):
         self.terms = None
-        self.nlp = None
 
-        self.stopwords = nltk.corpus.stopwords.words('english')
+        gpu = spacy.prefer_gpu()
+        if gpu:
+            print('GPU activated successfully!')
+
+        self.nlp = spacy.load("en_core_web_sm")
+        self.entity_ruler = spacy.pipeline.EntityRuler(self.nlp)
+        self.nlp.add_pipe(self.entity_ruler, before='ner')
+        self.ruler_patterns_set = set([])
+
+        self.stopwords = set(nltk.corpus.stopwords.words('english'))
         with open(os.path.join(lib_path, 'plural_to_singular.json'), 'r') as f:
             self.plural_to_singular = json.load(f)
 
@@ -22,12 +31,15 @@ class Parser(object):
         returns:
             list of top terms
         """
-        self.terms, self.nlp, all_patterns = extract_top_terms(text, stopwords=self.stopwords, 
-                                        plural_to_singular=self.plural_to_singular,
-                                        patterns=[])
+        self.terms, self.nlp, self.entity_ruler, self.ruler_patterns_set, new_patterns = \
+            extract_top_terms(text, self.nlp, self.entity_ruler,
+                            ruler_patterns_set=self.ruler_patterns_set,
+                            stopwords=self.stopwords, 
+                            plural_to_singular=self.plural_to_singular,
+                            patterns=patterns)
         print('Top terms extracted successfully!')
 
-        return self.terms, all_patterns
+        return self.terms, new_patterns
 
     def extract_heading_terms(self, text):
         """

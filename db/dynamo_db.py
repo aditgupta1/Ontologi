@@ -1,14 +1,15 @@
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 import argparse
+import time
 
-def get_sites_table(db):
+def get_pages_table(db):
     """
     This table stores visited sites
     """
     try:
         sites_table = db.create_table(
-            TableName='Sites',
+            TableName='Pages',
             KeySchema=[
                 {
                     'AttributeName': 'url',
@@ -27,7 +28,7 @@ def get_sites_table(db):
             }
         )
     except db.meta.client.exceptions.ResourceInUseException:
-        sites_table = db.Table('Sites')
+        sites_table = db.Table('Pages')
     return sites_table
 
 def get_entities_table(db):
@@ -47,6 +48,28 @@ def get_entities_table(db):
                 {
                     'AttributeName': 'name',
                     'AttributeType': 'S'
+                },
+                {
+                    'AttributeName': 'freq',
+                    'AttributeType': 'N'
+                }
+            ],
+            GlobalSecondaryIndexes=[
+                {
+                    'IndexName': 'FreqIndex',
+                    'KeySchema': [
+                        {
+                            'AttributeName': 'freq',
+                            'KeyType': 'HASH'
+                        }
+                    ],
+                    'Projection': {
+                        'ProjectionType': 'ALL'
+                    },
+                    'ProvisionedThroughput': {
+                        'ReadCapacityUnits': 1,
+                        'WriteCapacityUnits': 1
+                    }
                 }
             ],
             ProvisionedThroughput={
@@ -62,6 +85,8 @@ def get_patterns_table(db):
     """
     This table stores entity patterns for named entity recognition (NER) 
     when parsing text.
+    Only store patterns that have occurred to save space, then construct
+    variants on the fly
     """
     try:
         patterns_table = db.create_table(
@@ -85,33 +110,29 @@ def get_patterns_table(db):
                     'AttributeName': 'pattern',
                     'AttributeType': 'S'
                 },
-                {
-                    'AttributeName': 'freq',
-                    'AttributeType': 'N'
-                }
+                # {
+                #     'AttributeName': 'freq',
+                #     'AttributeType': 'N'
+                # }
             ],
-            GlobalSecondaryIndexes=[
-                {
-                    'IndexName': 'FreqIdIndex',
-                    'KeySchema': [
-                        {
-                            'AttributeName': 'freq',
-                            'KeyType': 'HASH'
-                        },
-                        {
-                            'AttributeName': 'id',
-                            'KeyType': 'RANGE'
-                        }
-                    ],
-                    'Projection': {
-                        'ProjectionType': 'ALL'
-                    },
-                    'ProvisionedThroughput': {
-                        'ReadCapacityUnits': 1,
-                        'WriteCapacityUnits': 1
-                    }
-                }
-            ],
+            # GlobalSecondaryIndexes=[
+            #     {
+            #         'IndexName': 'FreqIndex',
+            #         'KeySchema': [
+            #             {
+            #                 'AttributeName': 'freq',
+            #                 'KeyType': 'HASH'
+            #             }
+            #         ],
+            #         'Projection': {
+            #             'ProjectionType': 'ALL'
+            #         },
+            #         'ProvisionedThroughput': {
+            #             'ReadCapacityUnits': 1,
+            #             'WriteCapacityUnits': 1
+            #         }
+            #     }
+            # ],
             ProvisionedThroughput={
                 'ReadCapacityUnits': 1,
                 'WriteCapacityUnits': 1
@@ -130,11 +151,11 @@ if __name__ == '__main__':
     
     db = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url="http://localhost:5000")
 
-    sites_table = get_sites_table(db)
+    pages_table = get_pages_table(db)
     entities_table = get_entities_table(db)
     patterns_table = get_patterns_table(db)
 
-    print("Sites status:", sites_table.table_status)
+    print("Pages status:", pages_table.table_status)
     print("Entities status:", entities_table.table_status)
     print("Patterns status:", patterns_table.table_status)
 
@@ -142,8 +163,8 @@ if __name__ == '__main__':
     # print(list(db.tables.all()))
 
     # Get all items
-    response = entities_table.scan()
-    print('Entities:', len(response['Items']))
+    response = patterns_table.scan()
+    print('Patterns:', len(response['Items']))
 
     # Get query
     # response = sites_table.query(
@@ -151,23 +172,24 @@ if __name__ == '__main__':
     # )
     # print(response['Items'])
 
-    response = patterns_table.scan(
-        FilterExpression=Attr('id').eq('machine-learning')
-    )
-    items = response['Items']
-    print(items)
+    # response = patterns_table.scan(
+    #     FilterExpression=Attr('id').eq('machine')
+    # )
+    # items = response['Items']
+    # print(items)
 
+    # start = time.time()
+    # response = pages_table.get_item(
+    #     Key={
+    #         'url' : 'https://en.wikipedia.org/wiki/TensorFlow'
+    #     }
+    # )
+    # print(time.time() - start)
+    # print(response)
+    
     # Delete tables
     if args.delete:
-        sites_table.delete()
+        pages_table.delete()
         entities_table.delete()
         patterns_table.delete()
         print('Tables deleted successfully!')
-
-    # Get item
-    # db_response = entities_table.get_item(
-    #     Key={
-    #         'name': 'tensorflow',
-    #     }
-    # )
-    # print(db_response)

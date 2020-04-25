@@ -3,6 +3,7 @@ import networkx as nx
 import numpy as np
 import inflection
 import string
+import time
 
 import spacy
 from spacy.matcher import Matcher
@@ -55,10 +56,13 @@ def get_ent_id(span, stopwords=[], plural_to_singular={}):
     returns:
         ent_id
     """
+
     simplified_tokens = []
     for token in span:
         text = token.text.lower()
-        if text not in stopwords and text not in string.punctuation:
+        if token.is_upper:
+            simplified_tokens.append(text)
+        elif text not in stopwords and text not in string.punctuation:
             if text in plural_to_singular.keys():
                 singular = plural_to_singular[text]
             else:
@@ -89,6 +93,10 @@ def get_entity_patterns(nlp, doc, stopwords=[], plural_to_singular={}):
 
     for ent in doc.ents:
         ent_id = get_ent_id(ent, stopwords, plural_to_singular)
+        # Ent id can't be empty string
+        if ent_id == '':
+            continue
+
         # Remove literal duplicates
         if ent.label_ not in skiplabels and ent.text not in entity_set:
             entity_rules.append((ent, ent_id))
@@ -110,7 +118,10 @@ def get_entity_patterns(nlp, doc, stopwords=[], plural_to_singular={}):
             tokens = ent_id.split('-')
             
             if len(cand_lower) == len(tokens):
-                match = all([cand_lower[i] == tokens[i][0] for i in range(len(cand_lower))])
+                try:
+                    match = all([cand_lower[i] == tokens[i][0] for i in range(len(cand_lower))])
+                except IndexError:
+                    match = False
             else:
                 match = False
             
@@ -136,12 +147,12 @@ def get_entity_patterns(nlp, doc, stopwords=[], plural_to_singular={}):
         # Add to set to remove duplicate literal acroynm patterns
         pattern_set.add(pattern)
 
-    # Variant patterns
-    for ent_id in ent_id_list:
-        for variant in get_variants(ent_id):
-            if variant not in pattern_set:
-                entity_patterns.append({'label':'CUSTOM', 'pattern':variant, 'id':ent_id})
-                pattern_set.add(variant)
+    # # Variant patterns
+    # for ent_id in ent_id_list:
+    #     for variant in get_variants(ent_id):
+    #         if variant not in pattern_set:
+    #             entity_patterns.append({'label':'CUSTOM', 'pattern':variant, 'id':ent_id})
+    #             pattern_set.add(variant)
 
     for pattern, ent_id in acronym_rules:
         if pattern not in pattern_set:
@@ -227,65 +238,89 @@ def get_top_phrases(doc, keywords, k=2):
 
 def get_phrase_patterns(doc, plural_to_singular={}):
     keywords = get_keywords(doc)
-    # print(keywords)
+    # print('textrank:230>', keywords)
     bigrams = get_top_phrases(doc, keywords[:len(keywords)//10], k=2)
-    # print(bigrams)
+    # print('textrank:232>', bigrams)
 
     entity_patterns = []
     for phrase in bigrams:
         pattern_id = '-'.join(phrase).lower()
-        for variant in get_variants(pattern_id):
-            entity_patterns.append({'label':'CUSTOM', 'pattern':variant, 'id':pattern_id})
+        # for variant in get_variants(pattern_id):
+        entity_patterns.append({'label':'CUSTOM', 'pattern':' '.join(phrase), 'id':pattern_id})
 
     return entity_patterns
 
-def extract_top_terms(text, stopwords=[], plural_to_singular={}, patterns=[]):
+def new_deduplicated_variants(patterns, ruler_patterns_set, stopwords):
+    new_patterns = []
+    ent_id_set = set([])
+
+    for pat in patterns:
+        if pat['pattern'] not in ruler_patterns_set:
+            new_patterns.append(pat)
+        ruler_patterns_set.add(pat['pattern'])
+
+        if pat['id'] not in ent_id_set and pat['id'] not in stopwords:
+            for variant in get_variants(pat['id']):
+                if variant not in ruler_patterns_set:
+                    new_patterns.append({'label':'CUSTOM', 'pattern':variant, 'id':pat['id']})
+                ruler_patterns_set.add(variant)
+        ent_id_set.add(pat['id'])
+
+    return new_patterns
+
+def extract_top_terms(text, nlp, ruler, ruler_patterns_set,
+        stopwords=[], plural_to_singular={}, patterns=[]):
     """
     Finds the top terms. This can be either single words or bigrams.
     args:
         text: string
+        nlp: spacy nlp
+        ruler: entity_ruler
+        ruler_patterns_set: patterns in ruler for easy checking
         stopwords: list of stopwords
         plural_to_singular: dict of (plural, singular) items
         patterns: list of global patterns (from database)
     returns:
         list of strings
     """
-    def _deduplicate_patterns(arr):
-        result = []
-        pattern_set = set([])
-        for pat in arr:
-            if pat['pattern'] not in pattern_set:
-                result.append(pat)
-                pattern_set.add(pat['pattern'])
-        return result
-
-    nlp = spacy.load("en_core_web_sm")
+    # start = time.time()
+    # nlp = spacy.load("en_core_web_sm")
     doc = nlp(text)
+    # print('textrank:278>', time.time() - start)
 
     entity_patterns = get_entity_patterns(nlp, doc, stopwords, plural_to_singular)
     phrase_patterns = get_phrase_patterns(doc, plural_to_singular)
-    # Join new patterns with global patterns
-    all_patterns = _deduplicate_patterns(patterns + entity_patterns + phrase_patterns)
-    # return all_patterns
+    all_patterns = patterns + entity_patterns + phrase_patterns
+    # Get new patterns to add to pipe
+    # print('textrank:288>', len(list(ruler_patterns_set)))
+    new_patterns = new_deduplicated_variants(all_patterns, ruler_patterns_set, stopwords)
+    # print('textrank:290>', len(new_patterns), len(list(ruler_patterns_set)))
+    # print('textrank:287>', time.time() - start)
+
+    # ruler = EntityRuler(nlp)
+    other_pipes = [p for p in nlp.pipe_names if p != "tagger"]
+    with nlp.disable_pipes(*other_pipes):
+        ruler.add_patterns(new_patterns)
+
+    nlp.replace_pipe('entity_ruler', ruler)
+    # print('textrank:295>', time.time() - start)
+
     pattern_hits = set([])
-
-    ruler = EntityRuler(nlp)
-    ruler.add_patterns(all_patterns)
-    nlp.add_pipe(ruler, before='ner')
-
+    # Retokenize entities
     modified_doc = nlp(text)
     with modified_doc.retokenize() as retokenizer:
         for ent in modified_doc.ents:
             retokenizer.merge(ent)
             pattern_hits.add(ent.text)
+    # print('textrank:302>', time.time() - start)
 
-    # Add freq information to patterns
-    for i in range(len(all_patterns)):
-        if all_patterns[i]['pattern'] in pattern_hits:
-            if 'hits' in all_patterns[i].keys():
-                all_patterns[i]['hits'] += 1
-            else:
-                all_patterns[i]['hits'] = 1
+    # Compile new patterns to add to DB
+    old_patterns_set = set([p['pattern'] for p in patterns])
+    store_patterns = []
+    for pat in new_patterns:
+        if pat['pattern'] in pattern_hits and pat['pattern'] not in old_patterns_set:
+            store_patterns.append(pat)
+    # print('textrank:310>', time.time() - start)
 
     unique_term_set = set([])
     edges = {}
@@ -300,6 +335,7 @@ def extract_top_terms(text, stopwords=[], plural_to_singular={}, patterns=[]):
                 else:
                     noun = token.lemma_
     #             print(token.lemma_)
+                noun = noun.replace('"', "'")
                 if noun not in noun_list:
                     noun_list.append(noun)
         # print(noun_list)
@@ -320,6 +356,7 @@ def extract_top_terms(text, stopwords=[], plural_to_singular={}, patterns=[]):
 
     calculated_page_rank = nx.pagerank(gr, weight='weight')
     sorted_terms = sorted(calculated_page_rank, key=calculated_page_rank.get,reverse=True)
-
-    return sorted_terms[:len(sorted_terms) // 3], nlp, all_patterns
+    # print('textrank:346>', time.time() - start)
+    # print('text_rank:347>', len(store_patterns))
+    return sorted_terms[:len(sorted_terms) // 3], nlp, ruler, ruler_patterns_set, store_patterns
     
