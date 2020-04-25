@@ -8,7 +8,7 @@ https://docs.bokeh.org/en/latest/docs/user_guide/graph.html
 - Pandas
 - Math
 
-##Plotting Process
+## Plotting Process
 - Node size and color is determined by degree of node
 - Randomly sized lengths of edges to make graph readable
 
