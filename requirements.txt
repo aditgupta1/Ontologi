@@ -8,3 +8,4 @@ scrapy
 scrapyd
 scrapy-client
 scrapy-rotating-proxies
+bokeh
