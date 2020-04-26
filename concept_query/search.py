@@ -43,7 +43,7 @@ class GraphSearch(object):
             gr.add_node(node, weight=neighbor_scores[node] / neighbor_scores[node_name])
             
         for edge in edges:
-            gr.add_edge(edge['from'], edge['to'])
+            gr.add_edge(edge['from'], edge['to'], weight=edge['edge_weight'])
 
         return gr
 

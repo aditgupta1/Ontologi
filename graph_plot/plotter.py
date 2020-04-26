@@ -10,7 +10,7 @@ import csv
 from csv import reader
 import pickle
 
-with open('tensorflow-networkx', 'rb') as f:
+with open('tensorflow-networkx-3', 'rb') as f:
     gr = pickle.load(f)
 
 new_nodes = list(gr.nodes())
