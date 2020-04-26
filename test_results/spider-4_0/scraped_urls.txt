@@ -1,3 +1,0 @@
-https://tensorflow.rstudio.com/, TRUE
-https://www.coursera.org/specializations/tensorflow-in-practice, TRUE
-https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/, TRUE

@@ -10,6 +10,5 @@ web_crawler/items.py
 web_crawler/middlewares.py
 web_crawler/pipelines.py
 web_crawler/settings.py
-web_crawler/utils.py
 web_crawler/spiders/__init__.py
 web_crawler/spiders/page_graph.py

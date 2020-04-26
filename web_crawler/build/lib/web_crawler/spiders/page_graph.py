@@ -25,7 +25,7 @@ class PageGraphSpider(scrapy.Spider):
         """
         
         super().__init__(*args, **kwargs)
-        self.parser = Parser(lib_path='../lib')
+        self.parser = Parser(lib_path='../text_parser/lib')
         self.counter = 1
 
         self.TAGS = {

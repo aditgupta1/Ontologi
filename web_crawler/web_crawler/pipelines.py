@@ -28,7 +28,6 @@ class DBStorePipeline(object):
         self.dynamodb = boto3.resource('dynamodb', region_name='us-west-2', 
                                         endpoint_url=DYNAMODB_URL)
         self.pages_table = self.dynamodb.Table('Pages')
-        self.entities_table = self.dynamodb.Table('Entities')
         self.patterns_table = self.dynamodb.Table('Patterns')
         self.graph = Graph(NEO4J_URL, password=NEO4J_PSWD)
 
@@ -37,7 +36,7 @@ class DBStorePipeline(object):
         # print('pipelines:34>', graph['nodes'])
 
         '''Add nodes to graph'''
-        start = time.time()
+        # start = time.time()
         query = "UNWIND $nodes AS node " \
             'MERGE (n:Concept {name: node}) ' \
             "ON CREATE SET n.weight = 1, n.timestamp = $timestamp " \
@@ -135,75 +134,75 @@ class DBStorePipeline(object):
         
         print('ERROR: TransientError database deadlock (quit after 4 tries)')
 
-class DBPrunePipeline(object):
-    """
-    Prune
-    Entities with only one occurrence after a minute are deleted,
-    along with the associated patterns and node in the graph 
-    """
+# class DBPrunePipeline(object):
+#     """
+#     Prune
+#     Entities with only one occurrence after a minute are deleted,
+#     along with the associated patterns and node in the graph 
+#     """
     
-    def __init__(self):
-        self.dynamodb = boto3.resource('dynamodb', region_name='us-west-2', 
-                                        endpoint_url=DYNAMODB_URL)
-        self.entities_table = self.dynamodb.Table('Entities')
-        self.patterns_table = self.dynamodb.Table('Patterns')
-        self.graph = Graph(NEO4J_URL, password=NEO4J_PSWD)
+#     def __init__(self):
+#         self.dynamodb = boto3.resource('dynamodb', region_name='us-west-2', 
+#                                         endpoint_url=DYNAMODB_URL)
+#         self.entities_table = self.dynamodb.Table('Entities')
+#         self.patterns_table = self.dynamodb.Table('Patterns')
+#         self.graph = Graph(NEO4J_URL, password=NEO4J_PSWD)
 
-        if not os.path.isdir('../test_results'):
-            os.mkdir('../test_results')
-        if not os.path.isdir('../test_results/freq_dist'):
-            os.mkdir('../test_results/freq_dist')
+#         if not os.path.isdir('../test_results'):
+#             os.mkdir('../test_results')
+#         if not os.path.isdir('../test_results/freq_dist'):
+#             os.mkdir('../test_results/freq_dist')
 
-    def process_item(self, item, spider):
-        # Save freq distribution
-        plt.figure(figsize=(8,6))
-        for delay in [0, 90]:
-            query = f'MATCH (p:Concept) WHERE p.timestamp < {timestamp(delay)} RETURN p.weight AS weight'
-            weights = [x['weight'] for x in self.graph.run(query).data()]
-            plt.hist(weights, bins=20, alpha=0.25, label=str(delay))
-        plt.legend()
-        plt.savefig(f'../test_results/freq_dist/{timestamp()}.png')
+#     def process_item(self, item, spider):
+#         # Save freq distribution
+#         plt.figure(figsize=(8,6))
+#         for delay in [0, 90]:
+#             query = f'MATCH (p:Concept) WHERE p.timestamp < {timestamp(delay)} RETURN p.weight AS weight'
+#             weights = [x['weight'] for x in self.graph.run(query).data()]
+#             plt.hist(weights, bins=20, alpha=0.25, label=str(delay))
+#         plt.legend()
+#         plt.savefig(f'../test_results/freq_dist/{timestamp()}.png')
 
-        # Remove rare patterns (one pattern per ent_id)
-        # Get occurrence freq for each entity-id
-        # response = self.entities_table.query(
-        #     IndexName='FreqIndex',
-        #     KeyConditionExpression=Key('freq').eq(1)
-        # )
-        query = 'MATCH (p:Concept) WHERE p.weight = 1 AND ' \
-            f'p.timestamp < {timestamp(90)} RETURN p.name AS name'
+#         # Remove rare patterns (one pattern per ent_id)
+#         # Get occurrence freq for each entity-id
+#         # response = self.entities_table.query(
+#         #     IndexName='FreqIndex',
+#         #     KeyConditionExpression=Key('freq').eq(1)
+#         # )
+#         query = 'MATCH (p:Concept) WHERE p.weight = 1 AND ' \
+#             f'p.timestamp < {timestamp(90)} RETURN p.name AS name'
 
-        for ent in self.graph.run(query).data():
-            # print('pipelines:138>', current - int(ent['timestamp']))
-            # print('pipelines:139>', ent)
+#         for ent in self.graph.run(query).data():
+#             # print('pipelines:138>', current - int(ent['timestamp']))
+#             # print('pipelines:139>', ent)
 
-            # Delete all associated patterns
-            response = self.patterns_table.query(
-                KeyConditionExpression=Key('id').eq(ent['name'])
-            )
-            for it in response['Items']:
-                # print('pipelines:146>', it)
-                self.patterns_table.delete_item(
-                    Key={
-                        'id' : it['id'],
-                        'pattern' : it['pattern']
-                    }
-                )
+#             # Delete all associated patterns
+#             response = self.patterns_table.query(
+#                 KeyConditionExpression=Key('id').eq(ent['name'])
+#             )
+#             for it in response['Items']:
+#                 # print('pipelines:146>', it)
+#                 self.patterns_table.delete_item(
+#                     Key={
+#                         'id' : it['id'],
+#                         'pattern' : it['pattern']
+#                     }
+#                 )
 
-            # # Delete item in entries table
-            # self.entities_table.delete_item(
-            #     Key={
-            #         'name' : ent['name']
-            #     }
-            # )
+#             # # Delete item in entries table
+#             # self.entities_table.delete_item(
+#             #     Key={
+#             #         'name' : ent['name']
+#             #     }
+#             # )
             
-            # Delete node in graph
-            # node = Node('Concept', name=ent['name'])
-            # self.graph.delete(node)
-            ent_name = ent['name']
-            self.graph.run(f'MATCH (p:Concept) WHERE p.name="{ent_name}" DETACH DELETE p')
+#             # Delete node in graph
+#             # node = Node('Concept', name=ent['name'])
+#             # self.graph.delete(node)
+#             ent_name = ent['name']
+#             self.graph.run(f'MATCH (p:Concept) WHERE p.name="{ent_name}" DETACH DELETE p')
             
-        return item         
+#         return item         
 
 def timestamp(delay=0):
     return int(time.time()) - delay

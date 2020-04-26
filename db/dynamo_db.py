@@ -31,56 +31,6 @@ def get_pages_table(db):
         sites_table = db.Table('Pages')
     return sites_table
 
-def get_entities_table(db):
-    """
-    This table stores parsed entities and their page frequencies
-    """
-    try:
-        entities_table = db.create_table(
-            TableName='Entities',
-            KeySchema=[
-                {
-                    'AttributeName': 'name',
-                    'KeyType': 'HASH'  #Partition key
-                }
-            ],
-            AttributeDefinitions=[
-                {
-                    'AttributeName': 'name',
-                    'AttributeType': 'S'
-                },
-                {
-                    'AttributeName': 'freq',
-                    'AttributeType': 'N'
-                }
-            ],
-            GlobalSecondaryIndexes=[
-                {
-                    'IndexName': 'FreqIndex',
-                    'KeySchema': [
-                        {
-                            'AttributeName': 'freq',
-                            'KeyType': 'HASH'
-                        }
-                    ],
-                    'Projection': {
-                        'ProjectionType': 'ALL'
-                    },
-                    'ProvisionedThroughput': {
-                        'ReadCapacityUnits': 1,
-                        'WriteCapacityUnits': 1
-                    }
-                }
-            ],
-            ProvisionedThroughput={
-                'ReadCapacityUnits': 1,
-                'WriteCapacityUnits': 1
-            }
-        )
-    except db.meta.client.exceptions.ResourceInUseException:
-        entities_table = db.Table('Entities')
-    return entities_table
-
 def get_patterns_table(db):
     """
     This table stores entity patterns for named entity recognition (NER) 
@@ -152,44 +102,13 @@ if __name__ == '__main__':
     db = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url="http://localhost:5000")
 
     pages_table = get_pages_table(db)
-    entities_table = get_entities_table(db)
     patterns_table = get_patterns_table(db)
 
     print("Pages status:", pages_table.table_status)
-    print("Entities status:", entities_table.table_status)
     print("Patterns status:", patterns_table.table_status)
-
-    # Get tables
-    # print(list(db.tables.all()))
-
-    # Get all items
-    response = patterns_table.scan()
-    print('Patterns:', len(response['Items']))
-
-    # Get query
-    # response = sites_table.query(
-    #     KeyConditionExpression=Key('url').eq(response['Items'][0]['url'])
-    # )
-    # print(response['Items'])
-
-    # response = patterns_table.scan(
-    #     FilterExpression=Attr('id').eq('machine')
-    # )
-    # items = response['Items']
-    # print(items)
-
-    # start = time.time()
-    # response = pages_table.get_item(
-    #     Key={
-    #         'url' : 'https://en.wikipedia.org/wiki/TensorFlow'
-    #     }
-    # )
-    # print(time.time() - start)
-    # print(response)
     
     # Delete tables
     if args.delete:
         pages_table.delete()
-        entities_table.delete()
         patterns_table.delete()
         print('Tables deleted successfully!')

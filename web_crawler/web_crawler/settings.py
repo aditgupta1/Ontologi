@@ -56,6 +56,7 @@ DOWNLOAD_DELAY = 3
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
    'web_crawler.middlewares.RequestBouncerDownloaderMiddleware': 543,
+   # 'rotating_proxies.middlewares.RotatingProxyMiddleware': 610,
 }
 
 # Enable or disable extensions

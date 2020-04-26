@@ -1,2 +1,0 @@
-https://pypi.org/project/tensorflow/, TRUE
-https://opensource.com/article/17/11/intro-tensorflow, TRUE

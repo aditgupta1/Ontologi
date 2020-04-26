@@ -1,2 +1,0 @@
-https://twitter.com/tensorflow?lang=en, TRUE
-https://towardsdatascience.com/pytorch-vs-tensorflow-spotting-the-difference-25c75777377b?gi=44638140d4fe, TRUE

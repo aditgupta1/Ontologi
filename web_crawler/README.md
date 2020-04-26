@@ -26,11 +26,6 @@ scrapy crawl page_graph -L ERROR -a save=True
 
 Currently using local DynamoDB instance, but can easily be integrated with AWS remote DynamoDB by changing the ```endpoint_url``` argument when accessing database.
 
-## Notes
-
-BFO vs DFO
-https://docs.scrapy.org/en/latest/faq.html#faq-bfo-dfo
-
 ## Deploy Scrapyd
 
 https://www.youtube.com/watch?v=PZKH5S0C8EI
@@ -57,3 +52,11 @@ curl http://localhost:6800/schedule.json -d project=web_crawler -d spider=page_g
 ```
 
 Commands: https://scrapyd.readthedocs.io/en/latest/api.html
+
+## Notes
+
+BFO vs DFO
+https://docs.scrapy.org/en/latest/faq.html#faq-bfo-dfo
+
+Rotating proxies
+https://www.scrapehero.com/how-to-rotate-proxies-and-ip-addresses-using-python-3/

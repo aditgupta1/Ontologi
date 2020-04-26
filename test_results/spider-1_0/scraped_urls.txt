@@ -1,3 +1,0 @@
-https://www.tensorflow.org/, TRUE
-https://opensource.google/projects/tensorflow, TRUE
-https://machinelearningmastery.com/introduction-python-deep-learning-library-tensorflow/, TRUE

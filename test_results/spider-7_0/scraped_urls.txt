@@ -1,2 +1,0 @@
-https://www.wired.com/2015/11/google-open-sources-its-artificial-intelligence-engine/, TRUE
-https://ngc.nvidia.com/catalog/containers/nvidia:tensorflow, FALSE
