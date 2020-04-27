@@ -12,17 +12,20 @@ import csv
 from csv import reader
 import pickle
 from flask import Flask, request, render_template, abort, Response, Markup
+from concept_query import GraphSearch
+import time
+
+client = GraphSearch()
+start = time.time()
 app = Flask(__name__)
 
 @app.route('/')
 def application():
-	with open('tensorflow-networkx', 'rb') as f:
-	    gr = pickle.load(f)
-
+	query = 'tensorflow'
+	gr = client.get_result(query)
 	new_nodes = list(gr.nodes())
 	new_weights = list(gr.nodes[name]['weight'] for name in gr.nodes) 
 	new_edges = list(gr.edges())
-	root = 'tensorflow'
 
 	G = nx.Graph()
 	G.add_nodes_from(new_nodes,color= 'blue')  #add all weights
@@ -45,7 +48,7 @@ def application():
 	graph.node_renderer.data_source.data['size'] = list(6*v for v in new_weights) #size of node (current six times the weight provided)
 
 	#if we just want two colors use this 
-	graph.node_renderer.data_source.data['color'] = ['red' if x == root else 'green' for x in list(G.nodes())]
+	graph.node_renderer.data_source.data['color'] = ['red' if x == query else 'green' for x in list(G.nodes())]
 
 	#if we want to add edge width differences based on weight, use: https://stackoverflow.com/questions/49136867/networkx-plotting-in-bokeh-how-to-set-edge-width-based-on-graph-edge-weight
 
