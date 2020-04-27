@@ -5,7 +5,7 @@
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-from .settings import DYNAMODB_URL
+from concept_query.db import DynamoDB
 
 from scrapy import signals, exceptions
 import boto3
@@ -69,9 +69,8 @@ class RequestBouncerDownloaderMiddleware(object):
         """
         This downloader middleware ignores requests that have already been scraped
         """
-        self.db = boto3.resource('dynamodb', region_name='us-west-2', 
-                                endpoint_url=DYNAMODB_URL)
-        self.table = self.db.Table('Pages')
+        self.db = DynamoDB(region_name='us-west-2', endpoint_url='http://localhost:5000')
+        self.table = self.db.get_pages_table()
 
     @classmethod
     def from_crawler(cls, crawler):

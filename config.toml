@@ -1,0 +1,17 @@
+[DYNAMODB_LOCAL]
+REGION_NAME = "us-west-2"
+URI = "http://localhost:5000"
+
+[NEO4J_LOCAL]
+USERNAME = "neo4j"
+PASSWORD = "pswd"
+URI = "bolt://localhost:7687"
+# Localhost must have encrypted off
+ENCRYPTED = false 
+
+[NEO4J_CLOUD]
+USERNAME = "neo4j"
+PASSWORD = "password"
+URI = "bolt://34.74.158.108:7687"
+# Remote must have encrypted on
+ENCRYPTED = true 

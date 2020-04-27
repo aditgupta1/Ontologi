@@ -22,10 +22,10 @@ class DBStorePipeline(object):
     """
     
     def __init__(self):
-        self.dynamodb = DynamoDB()
+        self.dynamodb = DynamoDB(region_name='us-west-2', endpoint_url='http://localhost:5000')
         self.pages_table = self.dynamodb.get_pages_table()
         self.patterns_table = self.dynamodb.get_patterns_table()
-        self.graph = GraphDB()
+        self.graph = GraphDB(uri='bolt://localhost:7687', user='neo4j', password='pswd')
 
     def process_item(self, item, spider):
         graph = item['graph']
@@ -61,6 +61,7 @@ class DBStorePipeline(object):
                     Item={
                         'id': pat['id'],
                         'pattern' : pat['pattern'],
+                        'timestamp' : timestamp()
                     }
                 )
         # print('pipelines:105>', time.time() - start)

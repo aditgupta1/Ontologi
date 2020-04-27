@@ -1,19 +1,10 @@
-from concept_query import GraphCrawl, GraphDB
+from concept_query import GraphCrawl, GraphDB, DynamoDB
 
 import argparse
 import os
 import requests
 import json
-
-def create_tables():
-    os.system('python db/dynamo_db.py')
-    # os.system('python db/neo4j.py')
-
-def delete_tables():
-    os.system('python db/dynamo_db.py --delete')
-    # os.system('python db/neo4j.py --delete')
-    graph = GraphDB()
-    graph.delete_table()
+import toml
 
 def stop_crawlers():
     """
@@ -42,16 +33,29 @@ if __name__ == '__main__':
                         help='Delete all tables in database')
     args = parser.parse_args()
 
+    # DB configs
+    config = toml.load('config.toml')
+
     if args.stop:
         stop_crawlers()
         exit()
 
     if args.delete:
-        delete_tables()
+        graph = GraphDB(uri=config['NEO4J_LOCAL']['URI'],
+            user=config['NEO4J_LOCAL']['USERNAME'],
+            password=config['NEO4J_LOCAL']['PASSWORD'])
+        graph.delete_table()
 
-    create_tables()
+        dynamodb = DynamoDB(region_name=config['DYNAMODB_LOCAL']['REGION_NAME'],
+            endpoint_url=config['DYNAMODB_LOCAL']['URI'])
+        dynamodb.get_pages_table().delete()
+        dynamodb.get_patterns_table().delete()
 
-    crawler = GraphCrawl(n_crawlers=8, iterations=2, pages_per_concept=5)
+        print('Tables deleted successfully!')
+
+    crawler = GraphCrawl(n_crawlers=8, iterations=1, pages_per_concept=5,
+                        dynamodb_config=config['DYNAMODB_LOCAL'],
+                        neo4j_config=config['NEO4J_LOCAL'])
 
     # Run crawlers
     crawler.crawl(args.query)

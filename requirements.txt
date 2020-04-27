@@ -1,11 +1,11 @@
-click>=6.6
 networkx>=1.11
 nltk>=3.2.1
 numpy>=1.11.2
 boto3
-py2neo
+neo4j
 scrapy
 scrapyd
 scrapy-client
 scrapy-rotating-proxies
-bokeh
+bokeh==0.12.15
+toml

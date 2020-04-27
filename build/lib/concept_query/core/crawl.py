@@ -1,5 +1,5 @@
 from ..google_search import GoogleSearch
-from ..db import GraphDB
+from ..db import GraphDB, DynamoDB
 from ..utils import distribute
 
 import os
@@ -12,15 +12,18 @@ import boto3
 from boto3.dynamodb.conditions import Key, Attr
 
 class GraphCrawl(object):
-    def __init__(self, n_crawlers=8, iterations=2, pages_per_concept=5):
+    def __init__(self, n_crawlers=8, iterations=2, pages_per_concept=5,
+            dynamodb_config={}, neo4j_config={}):
         """
         Initialize graph crawler
         args:
-            n_crawler: number of concurrent crawlers
+            n_crawlers: number of concurrent crawlers
                 https://scrapyd.readthedocs.io/en/stable/config.html
                 (set max_proc_per_cpu in scrapyd conf)
             iterations: number of degrees of freedom to crawl
             pages_per_concept: number of urls to scrape per concept
+            dynamodb_config: dict-like object (e.g., ConfigParser section)
+            neo4j_config: see dynamodb_config
         """
         
         os.makedirs('./urls', exist_ok=True)
@@ -30,10 +33,16 @@ class GraphCrawl(object):
         self.googlesearch = GoogleSearch(max_proc=16)
 
         # Databases
-        self.graph = GraphDB()
-        self.db = boto3.resource('dynamodb', region_name='us-west-2', 
-                                endpoint_url="http://localhost:5000")
-        self.patterns_table = self.db.Table('Patterns')
+        self.neo4j_config = neo4j_config
+        self.graph = GraphDB(uri=neo4j_config['URI'],
+            user=neo4j_config['USERNAME'], 
+            password=neo4j_config['PASSWORD'],
+            encrypted=neo4j_config['ENCRYPTED'])
+
+        self.dynamodb_config = dynamodb_config
+        self.dynamodb = DynamoDB(region_name=dynamodb_config['REGION_NAME'],
+            endpoint_url=dynamodb_config['URI'])
+        self.patterns_table = self.dynamodb.get_patterns_table()
 
     def crawl(self, query):
         """
@@ -66,6 +75,8 @@ class GraphCrawl(object):
                         'spider' : 'page_graph',
                         'url_path' : crawler_paths[i],
                         # 'save_name' : f'spider-{i+1}_{it}'
+                        'dynamodb_region_name' : self.dynamodb_config['REGION_NAME'],
+                        'dynamodb_uri' : self.dynamodb_config['URI']
                     })
                     print(response.text)
 

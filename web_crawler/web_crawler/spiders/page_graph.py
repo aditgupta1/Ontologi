@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import boto3
 import time
+import configparser
 
 class PageGraphSpider(scrapy.Spider):
     name = "page_graph"
@@ -16,6 +17,8 @@ class PageGraphSpider(scrapy.Spider):
         """
         kwargs:
             url_path: path to list of urls to scrape
+            dynamodb_region_name: region name
+            dynamodb_uri: endpoint url
             save_name: (optional) spider name to save graphs and urls
         """
         
@@ -45,8 +48,10 @@ class PageGraphSpider(scrapy.Spider):
             self.save_dir = None
 
         # Connect database to get entity patterns
-        self.db = DynamoDB()
+        self.db = DynamoDB(region_name=kwargs['dynamodb_region_name'],
+            endpoint_url=kwargs['dynamodb_uri'])
         self.table = self.db.get_patterns_table()
+        self.last_read = 0
 
     def parse(self, response):
         print('page_graph:49>', response.url)

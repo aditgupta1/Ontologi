@@ -283,19 +283,18 @@ def extract_top_terms(text, nlp, ruler, ruler_patterns_set,
     returns:
         list of strings
     """
-    # start = time.time()
-    # nlp = spacy.load("en_core_web_sm")
+    start = time.time()
     doc = nlp(text)
-    # print('textrank:278>', time.time() - start)
+    print('textrank:278>', time.time() - start)
 
     entity_patterns = get_entity_patterns(nlp, doc, stopwords, plural_to_singular)
     phrase_patterns = get_phrase_patterns(doc, plural_to_singular)
     all_patterns = patterns + entity_patterns + phrase_patterns
     # Get new patterns to add to pipe
-    # print('textrank:288>', len(list(ruler_patterns_set)))
+    print('textrank:288>', len(list(ruler_patterns_set)))
     new_patterns = new_deduplicated_variants(all_patterns, ruler_patterns_set, stopwords)
-    # print('textrank:290>', len(new_patterns), len(list(ruler_patterns_set)))
-    # print('textrank:287>', time.time() - start)
+    print('textrank:290>', len(new_patterns), len(list(ruler_patterns_set)))
+    print('textrank:287>', time.time() - start)
 
     # ruler = EntityRuler(nlp)
     other_pipes = [p for p in nlp.pipe_names if p != "tagger"]
@@ -303,7 +302,7 @@ def extract_top_terms(text, nlp, ruler, ruler_patterns_set,
         ruler.add_patterns(new_patterns)
 
     nlp.replace_pipe('entity_ruler', ruler)
-    # print('textrank:295>', time.time() - start)
+    print('textrank:295>', time.time() - start)
 
     pattern_hits = set([])
     # Retokenize entities
@@ -312,7 +311,7 @@ def extract_top_terms(text, nlp, ruler, ruler_patterns_set,
         for ent in modified_doc.ents:
             retokenizer.merge(ent)
             pattern_hits.add(ent.text)
-    # print('textrank:302>', time.time() - start)
+    print('textrank:302>', time.time() - start)
 
     # Compile new patterns to add to DB
     old_patterns_set = set([p['pattern'] for p in patterns])
@@ -320,7 +319,7 @@ def extract_top_terms(text, nlp, ruler, ruler_patterns_set,
     for pat in new_patterns:
         if pat['pattern'] in pattern_hits and pat['pattern'] not in old_patterns_set:
             store_patterns.append(pat)
-    # print('textrank:310>', time.time() - start)
+    print('textrank:310>', time.time() - start)
 
     unique_term_set = set([])
     edges = {}
@@ -356,7 +355,7 @@ def extract_top_terms(text, nlp, ruler, ruler_patterns_set,
 
     calculated_page_rank = nx.pagerank(gr, weight='weight')
     sorted_terms = sorted(calculated_page_rank, key=calculated_page_rank.get,reverse=True)
-    # print('textrank:346>', time.time() - start)
-    # print('text_rank:347>', len(store_patterns))
+    print('textrank:346>', time.time() - start)
+    print('text_rank:347>', len(store_patterns))
     return sorted_terms[:len(sorted_terms) // 3], nlp, ruler, ruler_patterns_set, store_patterns
     

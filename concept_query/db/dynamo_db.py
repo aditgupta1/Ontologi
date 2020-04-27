@@ -4,7 +4,7 @@ import argparse
 import time
 
 class DynamoDB(object):
-    def __init__(self, region_name='us-west-2', endpoint_url="http://localhost:5000"):
+    def __init__(self, region_name, endpoint_url):
         self.db = boto3.resource('dynamodb', 
             region_name=region_name, 
             endpoint_url=endpoint_url)
@@ -14,7 +14,7 @@ class DynamoDB(object):
         This table stores visited sites
         """
         try:
-            sites_table = self.db.create_table(
+            pages_table = self.db.create_table(
                 TableName='Pages',
                 KeySchema=[
                     {
@@ -34,8 +34,8 @@ class DynamoDB(object):
                 }
             )
         except self.db.meta.client.exceptions.ResourceInUseException:
-            sites_table = self.db.Table('Pages')
-        return sites_table
+            pages_table = self.db.Table('Pages')
+        return pages_table
 
     def get_patterns_table(self):
         """
@@ -66,29 +66,33 @@ class DynamoDB(object):
                         'AttributeName': 'pattern',
                         'AttributeType': 'S'
                     },
-                    # {
-                    #     'AttributeName': 'freq',
-                    #     'AttributeType': 'N'
-                    # }
+                    {
+                        'AttributeName': 'timestamp',
+                        'AttributeType': 'N'
+                    }
                 ],
-                # GlobalSecondaryIndexes=[
-                #     {
-                #         'IndexName': 'FreqIndex',
-                #         'KeySchema': [
-                #             {
-                #                 'AttributeName': 'freq',
-                #                 'KeyType': 'HASH'
-                #             }
-                #         ],
-                #         'Projection': {
-                #             'ProjectionType': 'ALL'
-                #         },
-                #         'ProvisionedThroughput': {
-                #             'ReadCapacityUnits': 1,
-                #             'WriteCapacityUnits': 1
-                #         }
-                #     }
-                # ],
+                GlobalSecondaryIndexes=[
+                    {
+                        'IndexName': 'TimestampIndex',
+                        'KeySchema': [
+                            {
+                                'AttributeName': 'id',
+                                'KeyType': 'HASH'
+                            },
+                            {
+                                'AttributeName': 'timestamp',
+                                'KeyType': 'RANGE'
+                            }
+                        ],
+                        'Projection': {
+                            'ProjectionType': 'ALL'
+                        },
+                        'ProvisionedThroughput': {
+                            'ReadCapacityUnits': 1,
+                            'WriteCapacityUnits': 1
+                        }
+                    }
+                ],
                 ProvisionedThroughput={
                     'ReadCapacityUnits': 1,
                     'WriteCapacityUnits': 1
@@ -103,22 +107,22 @@ class DynamoDB(object):
         self.get_patterns_table().delete()
         print('Tables deleted successfully!')
 
-if __name__ == '__main__':
-    # Argument parser
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--delete', action='store_true', 
-                        help='Delete all tables in database')
-    args = parser.parse_args()
+# if __name__ == '__main__':
+#     # Argument parser
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('--delete', action='store_true', 
+#                         help='Delete all tables in database')
+#     args = parser.parse_args()
     
-    dynamodb = DynamoDB()
+#     dynamodb = DynamoDB()
 
-    pages_table = dynamodb.get_pages_table()
-    patterns_table = dynamodb.get_patterns_table()
+#     pages_table = dynamodb.get_pages_table()
+#     patterns_table = dynamodb.get_patterns_table()
 
-    print("Pages status:", pages_table.table_status)
-    print("Patterns status:", patterns_table.table_status)
+#     print("Pages status:", pages_table.table_status)
+#     print("Patterns status:", patterns_table.table_status)
     
-    # Delete tables
-    if args.delete:
-        dynamodb.delete_tables()
+#     # Delete tables
+#     if args.delete:
+#         dynamodb.delete_tables()
         

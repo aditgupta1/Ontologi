@@ -1,18 +1,14 @@
-import sys
-sys.path.append('.')
-sys.path.append('..')
-
-from text_parser import Parser
-from ..settings import DYNAMODB_URL
+from concept_query.text_parser import Parser
+from concept_query.db import DynamoDB
 
 import os
 import scrapy
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
-# from googlesearch import search
 import boto3
 import time
+import configparser
 
 class PageGraphSpider(scrapy.Spider):
     name = "page_graph"
@@ -21,11 +17,13 @@ class PageGraphSpider(scrapy.Spider):
         """
         kwargs:
             url_path: path to list of urls to scrape
+            dynamodb_region_name: region name
+            dynamodb_uri: endpoint url
             save_name: (optional) spider name to save graphs and urls
         """
         
         super().__init__(*args, **kwargs)
-        self.parser = Parser(lib_path='../text_parser/lib')
+        self.parser = Parser()
         self.counter = 1
 
         self.TAGS = {
@@ -50,9 +48,10 @@ class PageGraphSpider(scrapy.Spider):
             self.save_dir = None
 
         # Connect database to get entity patterns
-        self.db = boto3.resource('dynamodb', region_name='us-west-2', 
-                                endpoint_url=DYNAMODB_URL)
-        self.table = self.db.Table('Patterns')
+        self.db = DynamoDB(region_name=kwargs['dynamodb_region_name'],
+            endpoint_url=kwargs['dynamodb_uri'])
+        self.table = self.db.get_patterns_table()
+        self.last_read = 0
 
     def parse(self, response):
         print('page_graph:49>', response.url)

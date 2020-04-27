@@ -5,16 +5,10 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 
-import sys
-sys.path.append('../db')
-from neo4j_db import GraphDB
-from .settings import DYNAMODB_URL, NEO4J_URL, NEO4J_PSWD
+from concept_query.db import GraphDB, DynamoDB
 
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
-# from py2neo import Graph, Node, Relationship
-from py2neo.database import TransientError
-
 import os
 import time
 import matplotlib.pyplot as plt
@@ -28,11 +22,10 @@ class DBStorePipeline(object):
     """
     
     def __init__(self):
-        self.dynamodb = boto3.resource('dynamodb', region_name='us-west-2', 
-                                        endpoint_url=DYNAMODB_URL)
-        self.pages_table = self.dynamodb.Table('Pages')
-        self.patterns_table = self.dynamodb.Table('Patterns')
-        self.graph = GraphDB()
+        self.dynamodb = DynamoDB(region_name='us-west-2', endpoint_url='http://localhost:5000')
+        self.pages_table = self.dynamodb.get_pages_table()
+        self.patterns_table = self.dynamodb.get_patterns_table()
+        self.graph = GraphDB(uri='bolt://localhost:7687', user='neo4j', password='pswd')
 
     def process_item(self, item, spider):
         graph = item['graph']
@@ -68,6 +61,7 @@ class DBStorePipeline(object):
                     Item={
                         'id': pat['id'],
                         'pattern' : pat['pattern'],
+                        'timestamp' : timestamp()
                     }
                 )
         # print('pipelines:105>', time.time() - start)

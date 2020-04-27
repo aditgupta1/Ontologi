@@ -5,9 +5,9 @@ import pandas as pd
 import networkx as nx
 
 class GraphSearch(object):
-    def __init__(self, neo4j_url='bolt://localhost:7687', **kwargs):
+    def __init__(self, neo4j_url="bolt://34.74.158.108:7687", **kwargs):
         # self.graph = Graph(neo4j_url, password=kwargs['password'])
-        self.graph = GraphDB()
+        self.graph = GraphDB(uri=neo4j_url, user='neo4j', password='password', encrypted=True)
 
     def exists(self, query):
         node_name = query.replace(' ', '-')
