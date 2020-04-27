@@ -1,16 +1,11 @@
-import sys
-sys.path.append('.')
-sys.path.append('..')
-
-from text_parser import Parser
-from ..settings import DYNAMODB_URL
+from concept_query.text_parser import Parser
+from concept_query.db import DynamoDB
 
 import os
 import scrapy
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
-# from googlesearch import search
 import boto3
 import time
 
@@ -25,7 +20,7 @@ class PageGraphSpider(scrapy.Spider):
         """
         
         super().__init__(*args, **kwargs)
-        self.parser = Parser(lib_path='../text_parser/lib')
+        self.parser = Parser()
         self.counter = 1
 
         self.TAGS = {
@@ -50,9 +45,8 @@ class PageGraphSpider(scrapy.Spider):
             self.save_dir = None
 
         # Connect database to get entity patterns
-        self.db = boto3.resource('dynamodb', region_name='us-west-2', 
-                                endpoint_url=DYNAMODB_URL)
-        self.table = self.db.Table('Patterns')
+        self.db = DynamoDB()
+        self.table = self.db.get_patterns_table()
 
     def parse(self, response):
         print('page_graph:49>', response.url)
@@ -238,5 +232,5 @@ def _plot_tree(gr, heading_level={}, n_levels=7, savepath=None):
 def _networkx_to_dict(gr):
     return {
         'nodes' : list(gr.nodes),
-        'edges' : list(gr.edges)
+        'edges' : [list(e) for e in gr.edges]
     }

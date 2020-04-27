@@ -92,10 +92,3 @@ ITEM_PIPELINES = {
 #HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
-
-
-
-# DB settings
-DYNAMODB_URL = "http://localhost:5000"
-NEO4J_URL = 'bolt://localhost:7687'
-NEO4J_PSWD = 'pswd'

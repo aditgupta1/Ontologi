@@ -5,13 +5,10 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 
-from .settings import DYNAMODB_URL, NEO4J_URL, NEO4J_PSWD
+from concept_query.db import GraphDB, DynamoDB
 
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
-from py2neo import Graph, Node, Relationship
-from py2neo.database import TransientError
-
 import os
 import time
 import matplotlib.pyplot as plt
@@ -25,11 +22,10 @@ class DBStorePipeline(object):
     """
     
     def __init__(self):
-        self.dynamodb = boto3.resource('dynamodb', region_name='us-west-2', 
-                                        endpoint_url=DYNAMODB_URL)
-        self.pages_table = self.dynamodb.Table('Pages')
-        self.patterns_table = self.dynamodb.Table('Patterns')
-        self.graph = Graph(NEO4J_URL, password=NEO4J_PSWD)
+        self.dynamodb = DynamoDB()
+        self.pages_table = self.dynamodb.get_pages_table()
+        self.patterns_table = self.dynamodb.get_patterns_table()
+        self.graph = GraphDB()
 
     def process_item(self, item, spider):
         graph = item['graph']
@@ -41,7 +37,7 @@ class DBStorePipeline(object):
             'MERGE (n:Concept {name: node}) ' \
             "ON CREATE SET n.weight = 1, n.timestamp = $timestamp " \
             "ON MATCH SET n.weight = n.weight + 1"
-        self.execute(query, nodes=graph['nodes'], timestamp=timestamp())
+        self.graph.run(query, nodes=graph['nodes'], timestamp=timestamp())
 
         '''Add edges to graph'''
         query = 'UNWIND $edges AS edge ' \
@@ -50,7 +46,7 @@ class DBStorePipeline(object):
             "MERGE (a)-[r:HAS]->(b) " \
             "ON CREATE SET r.weight = 1, r.timestamp = $timestamp " \
             "ON MATCH SET r.weight = r.weight + 1"
-        self.execute(query, edges=graph['edges'], timestamp=timestamp())
+        self.graph.run(query, edges=graph['edges'], timestamp=timestamp())
 
         # print('pipelines:69>', time.time() - start, 'nodes:', len(graph['nodes']), 'edges:', len(graph['edges']))
 
@@ -82,7 +78,7 @@ class DBStorePipeline(object):
             query = "UNWIND $nodes AS node " \
                 'MERGE (n:Concept {name: node}) ' \
                 "ON MATCH SET n.weight = n.weight - 1"
-            self.execute(query, nodes=db_response['Item']['nodes'])
+            self.graph.run(query, nodes=db_response['Item']['nodes'])
 
             # Subtract old edges
             query = 'UNWIND $edges AS edge ' \
@@ -90,7 +86,7 @@ class DBStorePipeline(object):
                 'MATCH (b:Concept {name: edge[1]}) ' \
                 "MERGE (a)-[r:HAS]->(b) " \
                 "ON MATCH SET r.weight = r.weight - 1"
-            self.execute(query, edges=db_response['Item']['edges'])
+            self.graph.run(query, edges=[edge.split(' ') for edge in db_response['Item']['edges']])
 
             # Updated pages table
             self.pages_table.update_item(
@@ -115,24 +111,24 @@ class DBStorePipeline(object):
 
         return item
 
-    def execute(self, query, **kwargs):
-        """
-        Handle database deadlocks
-        Try up to 4 times before finally quiting
-        Sleep for 1 second before retrying
-        """
+    # def execute(self, query, **kwargs):
+    #     """
+    #     Handle database deadlocks
+    #     Try up to 4 times before finally quiting
+    #     Sleep for 1 second before retrying
+    #     """
         
-        num_tries = 0
-        while num_tries < 4:
-            try:
-                self.graph.run(query, **kwargs)
-                return
-            except TransientError:
-                print('WARNING: TransientError database deadlock (retrying)')
-                num_tries += 1
-                time.sleep(0.5)
+    #     num_tries = 0
+    #     while num_tries < 4:
+    #         try:
+    #             self.graph.run(query, **kwargs)
+    #             return
+    #         except TransientError:
+    #             print('WARNING: TransientError database deadlock (retrying)')
+    #             num_tries += 1
+    #             time.sleep(0.5)
         
-        print('ERROR: TransientError database deadlock (quit after 4 tries)')
+    #     print('ERROR: TransientError database deadlock (quit after 4 tries)')
 
 # class DBPrunePipeline(object):
 #     """

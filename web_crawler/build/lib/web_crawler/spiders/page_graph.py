@@ -238,5 +238,5 @@ def _plot_tree(gr, heading_level={}, n_levels=7, savepath=None):
 def _networkx_to_dict(gr):
     return {
         'nodes' : list(gr.nodes),
-        'edges' : list(gr.edges)
+        'edges' : [list(e) for e in gr.edges]
     }
