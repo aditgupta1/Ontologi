@@ -24,6 +24,11 @@ def index():
 	if request.method == 'GET':
 		return render_template('application.html')
 
+@app.route('/reset', methods = ['GET','POST'])
+def reset():
+	if request.method == 'POST':
+		return render_template('application.html')
+
 @app.route('/application', methods = ['GET','POST'])
 def application():
 	if request.method == 'GET':	
@@ -72,7 +77,7 @@ def application():
 			)
 
 			#url that you want to redirect. Currently take you to google search with @concept
-			url = "https://www.google.com/search?q=@concept&oq=@concept+&aqs=chrome..69i57j46j0l3j46j0.2127j0j1&sourceid=chrome&ie=UTF-8"
+			url = "http://127.0.0.1:5000/?query=@concept"
 			taptool = plot.select(type=TapTool)
 			taptool.callback = OpenURL(url=url) #callback on url
 			plot.renderers.append(graph)
