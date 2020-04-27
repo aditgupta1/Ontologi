@@ -77,7 +77,7 @@ def application():
 			)
 
 			#url that you want to redirect. Currently take you to google search with @concept
-			url = "http://127.0.0.1:5000/?query=@concept"
+			url = "http://127.0.0.1:5000/application"
 			taptool = plot.select(type=TapTool)
 			taptool.callback = OpenURL(url=url) #callback on url
 			plot.renderers.append(graph)
