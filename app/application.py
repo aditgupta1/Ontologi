@@ -29,7 +29,7 @@ def index():
 # 	if request.method == 'POST':
 # 		return render_template('application.html')
 
-@app.route('/', methods = ['GET','POST'])
+@app.route('/query', methods = ['GET','POST'])
 def application(query):
 	if request.method == 'GET':	
 		gr = client.get_result(query)
