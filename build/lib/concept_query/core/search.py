@@ -14,7 +14,7 @@ class GraphSearch(object):
         data = self.graph.run('MATCH (n:Concept {name: $name}) RETURN n', name=node_name).data()
         return len(data) > 0
 
-    def get_result(self, query):
+    def get_result(self, query, prune=False):
         """
         Get networkx representation of query results
         args:
@@ -47,6 +47,9 @@ class GraphSearch(object):
             
         for edge in edges:
             gr.add_edge(edge['from'], edge['to'], weight=edge['edge_weight'])
+
+        if prune:
+            gr = _prune_graph(gr)
 
         return gr
 
@@ -131,3 +134,38 @@ def _get_networkx(data):
         gr.add_edge(e['to'], e['from'], weight=e['edge_weight'])
     
     return gr
+
+def _prune_graph(gr):
+    G = gr
+    continue_pruning = True
+    step = 1
+
+    while continue_pruning:
+        any_inbound_only = False
+        
+        # Get nodes
+        display_nodes = []
+        for node in G.nodes:
+            if G.out_degree(node) > 0:
+                display_nodes.append(node)
+            else:
+                any_inbound_only = True
+
+        # Get edges
+        display_edges = []
+        for u,v,attr in G.edges(data=True):
+            if u in display_nodes and v in display_nodes:
+                display_edges.append((u,v,attr))
+                
+        G_new = nx.DiGraph()
+        for node in display_nodes:
+            G_new.add_node(node, weight=G.nodes[node]['weight'])
+        G_new.add_edges_from(display_edges)
+        
+        continue_pruning = any_inbound_only
+        G = G_new
+        
+        # print('Step:', step)
+        step += 1
+        
+    return G
