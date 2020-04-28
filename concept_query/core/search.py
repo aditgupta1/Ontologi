@@ -49,7 +49,7 @@ class GraphSearch(object):
             gr.add_edge(edge['from'], edge['to'], weight=edge['edge_weight'])
 
         if prune:
-            gr = _prune_graph(gr)
+            gr = _prune_graph(gr, query)
 
         return gr
 
@@ -135,7 +135,11 @@ def _get_networkx(data):
     
     return gr
 
-def _prune_graph(gr):
+def _prune_graph(gr, query):
+    """
+    Remove all nodes that don't have any outbound nodes
+    Unless the node is original query"""
+
     G = gr
     continue_pruning = True
     step = 1
@@ -146,7 +150,7 @@ def _prune_graph(gr):
         # Get nodes
         display_nodes = []
         for node in G.nodes:
-            if G.out_degree(node) > 0:
+            if G.out_degree(node) > 0 or node == query:
                 display_nodes.append(node)
             else:
                 any_inbound_only = True
