@@ -5,7 +5,7 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 
-from concept_query.db import GraphDB, DynamoDB
+from concept_query.db import GraphDB, DynamoDB, SqlDB
 
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
@@ -24,15 +24,17 @@ class DBStorePipeline(object):
     def __init__(self):
         self.dynamodb = DynamoDB(region_name='us-west-2', endpoint_url='http://localhost:5000')
         self.pages_table = self.dynamodb.get_pages_table()
-        self.patterns_table = self.dynamodb.get_patterns_table()
+        # self.patterns_table = self.dynamodb.get_patterns_table()
         self.graph = GraphDB(uri='bolt://localhost:7687', user='neo4j', password='pswd')
+        self.sql = SqlDB('../test.db')
 
     def process_item(self, item, spider):
         graph = item['graph']
         # print('pipelines:34>', graph['nodes'])
-
+        
+        start = time.time()
+        
         '''Add nodes to graph'''
-        # start = time.time()
         query = "UNWIND $nodes AS node " \
             'MERGE (n:Concept {name: node}) ' \
             "ON CREATE SET n.weight = 1, n.timestamp = $timestamp " \
@@ -48,23 +50,28 @@ class DBStorePipeline(object):
             "ON MATCH SET r.weight = r.weight + 1"
         self.graph.run(query, edges=graph['edges'], timestamp=timestamp())
 
-        # print('pipelines:69>', time.time() - start, 'nodes:', len(graph['nodes']), 'edges:', len(graph['edges']))
+        print('pipelines:69>', time.time() - start, 'nodes:', len(graph['nodes']), 'edges:', len(graph['edges']))
 
         '''Add new patterns'''
         patterns = item['patterns']
         # print('pipelines:75>', len(patterns))
 
-        with self.patterns_table.batch_writer() as batch:
-            for pat in patterns:
-                # print('pipelines:98>', pat['id'], pat['pattern'])
-                batch.put_item(
-                    Item={
-                        'id': pat['id'],
-                        'pattern' : pat['pattern'],
-                        'timestamp' : timestamp()
-                    }
-                )
-        # print('pipelines:105>', time.time() - start)
+        # with self.patterns_table.batch_writer() as batch:
+        #     for pat in patterns:
+        #         # print('pipelines:98>', pat['id'], pat['pattern'])
+        #         batch.put_item(
+        #             Item={
+        #                 'id': pat['id'],
+        #                 'pattern' : pat['pattern'],
+        #                 'timestamp' : timestamp()
+        #             }
+        #         )
+        # for pat in patterns:
+
+        self.sql.conn.executemany("INSERT INTO PATTERNS (PATTERN, ENT, TIMESTAMP) VALUES (?, ?, ?)", 
+            [(pat['pattern'], pat['id'], timestamp()) for pat in patterns])
+        self.sql.commit()
+        print('pipelines:105>', time.time() - start)
 
         '''Add graph to Pages table
         If exists already, subtract old nodes/edges from global graph and
@@ -108,7 +115,7 @@ class DBStorePipeline(object):
                     'edges' : [' '.join(edge) for edge in graph['edges']]
                 }
             )
-        # print('pipelines:155>', time.time() - start)
+        print('pipelines:155>', time.time() - start)
 
         return item
 

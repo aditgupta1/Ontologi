@@ -14,4 +14,10 @@ USERNAME = "neo4j"
 PASSWORD = "password"
 URI = "bolt://34.74.158.108:7687"
 # Remote must have encrypted on
-ENCRYPTED = true 
+ENCRYPTED = true
+
+[SQL_LOCAL]
+PATH = "test.db"
+
+[TASK_QUEUE]
+PATH = "task_queue.db"

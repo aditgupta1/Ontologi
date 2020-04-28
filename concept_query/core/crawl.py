@@ -1,6 +1,6 @@
 from ..google_search import GoogleSearch
-from ..db import GraphDB, DynamoDB
-from ..utils import distribute
+from ..db import GraphDB, DynamoDB, SqlDB
+from ..utils import distribute, TaskQueue
 
 import os
 import requests
@@ -13,7 +13,8 @@ from boto3.dynamodb.conditions import Key, Attr
 
 class GraphCrawl(object):
     def __init__(self, n_crawlers=8, iterations=2, pages_per_concept=5,
-            dynamodb_config={}, neo4j_config={}):
+            dynamodb_config={}, neo4j_config={}, sql_config={},
+            task_queue_config={}):
         """
         Initialize graph crawler
         args:
@@ -24,6 +25,8 @@ class GraphCrawl(object):
             pages_per_concept: number of urls to scrape per concept
             dynamodb_config: dict-like object (e.g., ConfigParser section)
             neo4j_config: see dynamodb_config
+            sql_config: see dynamodb_config
+            task_queue_config: see dynamodb_config
         """
         
         os.makedirs('./urls', exist_ok=True)
@@ -39,10 +42,18 @@ class GraphCrawl(object):
             password=neo4j_config['PASSWORD'],
             encrypted=neo4j_config['ENCRYPTED'])
 
-        self.dynamodb_config = dynamodb_config
-        self.dynamodb = DynamoDB(region_name=dynamodb_config['REGION_NAME'],
-            endpoint_url=dynamodb_config['URI'])
-        self.patterns_table = self.dynamodb.get_patterns_table()
+        # self.dynamodb_config = dynamodb_config
+        # self.dynamodb = DynamoDB(region_name=dynamodb_config['REGION_NAME'],
+        #     endpoint_url=dynamodb_config['URI'])
+        # self.patterns_table = self.dynamodb.get_patterns_table()
+
+        self.sql_config = sql_config
+        self.sql = SqlDB(path=sql_config['PATH'])
+
+        # # Task Queue
+        # self.task_queue_config = task_queue_config
+        # self.task_queue = TaskQueue(path=task_queue_config['PATH'])
+        # self.task_queue.clear()
 
     def crawl(self, query):
         """
@@ -68,17 +79,24 @@ class GraphCrawl(object):
                         f.write(url + '\n')
                 crawler_paths.append(path)
 
+            # for url in start_urls:
+            #     # print(url)
+            #     self.task_queue.push(url)
+            # print('84>', self.task_queue.is_empty())
+            # print(self.task_queue.select())
+
             for i in range(self.n_crawlers):
-                if len(crawler_urls[i]) > 0:
-                    response = requests.post('http://localhost:6800/schedule.json', data={
-                        'project' : 'web_crawler',
-                        'spider' : 'page_graph',
-                        'url_path' : crawler_paths[i],
-                        # 'save_name' : f'spider-{i+1}_{it}'
-                        'dynamodb_region_name' : self.dynamodb_config['REGION_NAME'],
-                        'dynamodb_uri' : self.dynamodb_config['URI']
-                    })
-                    print(response.text)
+                response = requests.post('http://localhost:6800/schedule.json', data={
+                    'project' : 'web_crawler',
+                    'spider' : 'page_graph',
+                    'url_path' : crawler_paths[i],
+                    # 'task_queue_path' : os.path.abspath(self.task_queue_config['PATH']),
+                    # 'save_name' : f'spider-{i+1}_{it}'
+                    # 'dynamodb_region_name' : self.dynamodb_config['REGION_NAME'],
+                    # 'dynamodb_uri' : self.dynamodb_config['URI']
+                    'sql_path' : os.path.abspath(self.sql_config['PATH'])
+                })
+                print(response.text)
 
             is_finished = False
             while not is_finished:
@@ -121,14 +139,14 @@ class GraphCrawl(object):
     def _prune_db(self):
         """Consolidate patterns (identical patterns with different ids)"""
         # Get patterns and convert to python dict
-        db_response = self.patterns_table.scan()
+        db_response = self.sql.execute('SELECT * FROM PATTERNS')
         patterns = {}
-        for item in db_response['Items']:
-            if item['pattern'] in patterns.keys():
+        for _, pattern, ent_id, _ in db_response:
+            if pattern in patterns.keys():
                 # print(item['pattern'], patterns[item['pattern']], item['id'])
-                patterns[item['pattern']].add(item['id'])
+                patterns[pattern].add(ent_id)
             else:
-                patterns[item['pattern']] = set([item['id'],])
+                patterns[pattern] = set([ent_id,])
 
         # Disjoint sets of ent ids with overlapping patterns
         duplicate_groups = []
@@ -149,10 +167,13 @@ class GraphCrawl(object):
         for group in duplicate_groups:
             all_cases = []
             for ent_id in group:
-                db_response = self.patterns_table.query(
-                    KeyConditionExpression=Key('id').eq(ent_id)
-                )
-                all_cases += db_response['Items']
+                query = 'SELECT * FROM PATTERNS WHERE ENT = ?'
+                db_response = self.sql.execute(query, (ent_id,))
+                for item in db_response:
+                    all_cases.append({
+                        'pattern' : item[1],
+                        'id' : item[2]
+                    })
             
             merge = None
 
@@ -171,28 +192,36 @@ class GraphCrawl(object):
             if merge is not None:
                 print('crawl:159>', group)
 
-                with self.patterns_table.batch_writer() as batch:
-                    for case in all_cases:
-                        if case['id'] != merge:
-                            batch.delete_item(
-                                Key={
-                                    'id': case['id'],
-                                    'pattern' : case['pattern']
-                                }
-                            )
-                            batch.put_item(
-                                Item={
-                                    'id': case['id'],
-                                    'pattern' : merge
-                                }
-                            )
+                # with self.patterns_table.batch_writer() as batch:
+                #     for case in all_cases:
+                #         if case['id'] != merge:
+                #             batch.delete_item(
+                #                 Key={
+                #                     'id': case['id'],
+                #                     'pattern' : case['pattern']
+                #                 }
+                #             )
+                #             batch.put_item(
+                #                 Item={
+                #                     'id': case['id'],
+                #                     'pattern' : merge
+                #                 }
+                #             )
+                for case in all_cases:
+                    if case['id'] != merge:
+                        query = 'DELETE FROM PATTERNS WHERE PATTERN = ? AND ENT = ?'
+                        self.sql.execute(query, (case['pattern'], case['id']))
+
+                        query = "INSERT INTO PATTERNS (PATTERN, ENT, TIMESTAMP) VALUES (?, ?, ?)"
+                        self.sql.execute(query, (case['pattern'], merge, -1))
+                        self.sql.commit()
 
         """Consolidate nodes using applicable patterns"""
         time.sleep(1)
-        db_response = self.patterns_table.scan()
+        db_response = self.sql.execute('SELECT * FROM PATTERNS')
         patterns = {}
-        for item in db_response['Items']:
-            patterns[item['pattern']] = item['id']
+        for item in db_response:
+            patterns[item[1]] = item[2]
 
         nodes_to_update = []
 

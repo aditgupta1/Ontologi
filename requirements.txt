@@ -9,3 +9,4 @@ scrapy-client
 scrapy-rotating-proxies
 bokeh==0.12.15
 toml
+sqlite3

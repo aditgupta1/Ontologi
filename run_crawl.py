@@ -1,4 +1,4 @@
-from concept_query import GraphCrawl, GraphDB, DynamoDB
+from concept_query import GraphCrawl, GraphDB, DynamoDB, SqlDB
 
 import argparse
 import os
@@ -53,9 +53,14 @@ if __name__ == '__main__':
 
         print('Tables deleted successfully!')
 
-    crawler = GraphCrawl(n_crawlers=8, iterations=1, pages_per_concept=5,
+        sql = SqlDB(config['SQL_LOCAL']['PATH'])
+        sql.delete()
+
+    crawler = GraphCrawl(n_crawlers=8, iterations=2, pages_per_concept=5,
                         dynamodb_config=config['DYNAMODB_LOCAL'],
-                        neo4j_config=config['NEO4J_LOCAL'])
+                        neo4j_config=config['NEO4J_LOCAL'],
+                        sql_config=config['SQL_LOCAL'],
+                        task_queue_config=config['TASK_QUEUE'])
 
     # Run crawlers
     crawler.crawl(args.query)

@@ -32,7 +32,7 @@ class Parser(object):
         Extracts keywords/phrases given string text
         args:
             text: string
-            ratio: fraction of all terms to return
+            patterns: new patterns
         returns:
             list of top terms
         """

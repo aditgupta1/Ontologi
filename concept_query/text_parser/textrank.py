@@ -279,7 +279,7 @@ def extract_top_terms(text, nlp, ruler, ruler_patterns_set,
         ruler_patterns_set: patterns in ruler for easy checking
         stopwords: list of stopwords
         plural_to_singular: dict of (plural, singular) items
-        patterns: list of global patterns (from database)
+        patterns: list of new patterns (from database)
     returns:
         list of strings
     """

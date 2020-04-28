@@ -1,5 +1,6 @@
 from concept_query.text_parser import Parser
-from concept_query.db import DynamoDB
+from concept_query.db import SqlDB #, DynamoDB
+from concept_query.utils import TaskQueue
 
 import os
 import scrapy
@@ -20,6 +21,8 @@ class PageGraphSpider(scrapy.Spider):
             dynamodb_region_name: region name
             dynamodb_uri: endpoint url
             save_name: (optional) spider name to save graphs and urls
+            sql_path: path to sql database
+            task_queue_path: path to task queue sql database
         """
         
         super().__init__(*args, **kwargs)
@@ -35,11 +38,24 @@ class PageGraphSpider(scrapy.Spider):
             'h6' : 6,
             'p' : 7
         }
-        with open(kwargs['url_path'], 'r') as f:
-            start_urls = f.readlines()
-        self.start_urls = [x.strip('\n') for x in start_urls]
-        print(self.start_urls)
 
+        '''Get starting url'''
+        # with open(kwargs['url_path'], 'r') as f:
+        #     start_urls = f.readlines()
+        # self.start_urls = [x.strip('\n') for x in start_urls]
+
+        self.task_queue = TaskQueue(kwargs['task_queue_path'])
+        # print('48>', self.task_queue.select())
+
+        if self.task_queue.is_empty():
+            self.start_urls = []
+        else:
+            self.task_id, url = self.task_queue.peek()
+            self.start_urls = [url,]
+
+        print('page_graph:54>start urls', self.start_urls)
+
+        '''Save results'''
         if 'save_name' in kwargs.keys():
             # Create test results folder
             self.save_dir = f'../test_results/{kwargs["save_name"]}'
@@ -47,33 +63,64 @@ class PageGraphSpider(scrapy.Spider):
         else:
             self.save_dir = None
 
+        '''Database'''
         # Connect database to get entity patterns
-        self.db = DynamoDB(region_name=kwargs['dynamodb_region_name'],
-            endpoint_url=kwargs['dynamodb_uri'])
-        self.table = self.db.get_patterns_table()
+        # self.db = DynamoDB(region_name=kwargs['dynamodb_region_name'],
+        #     endpoint_url=kwargs['dynamodb_uri'])
+        # self.table = self.db.get_patterns_table()
+
+        self.sql = SqlDB(kwargs['sql_path'])
         self.last_read = 0
 
     def parse(self, response):
+        try:
+            yield self._parse(response)
+        except:
+            print('ERROR')
+            pass
+
+        self.task_queue.update_completed(self.task_id)
+
+        '''Get next task'''
+        # End spider if no more URLs to process 
+        if self.task_queue.is_empty():
+            return None
+
+        self.task_id, url = self.task_queue.peek()
+        yield scrapy.Request(url, callback=self.parse)
+
+    def _parse(self, response):
         print('page_graph:49>', response.url)
+
+        # Update task status to working
+        print('page_graph:77>', self.task_id)
+        self.task_queue.update_working(self.task_id)
+
+        # print('page_graph:80>', self.task_queue.select())
 
         # Get paragraph text
         paragraphs = response.xpath('//p//text()').extract()
         body_text = ' '.join(paragraphs).replace('\n', ' ')
 
-        # Initialize parser with terms
-        # Get patterns from database
         start = time.time()
-        db_response = self.table.scan()
-        print('page_graph:65>', time.time() - start)
+
+        # Initialize parser with terms
+        # Only get patterns from database (since last read)
+        tmp = self.last_read
+        self.last_read = int(time.time())
+        db_response = self.sql.execute('SELECT * FROM PATTERNS WHERE TIMESTAMP >= ?', (tmp,))
+        # print('page_graph:65>read database', time.time() - start)
+
         patterns = []
-        for it in db_response['Items']:
-            patterns.append({'label':'CUSTOM', 'pattern':it['pattern'], 'id':it['id']})
-        print('page_graph:69>', time.time() - start)
-        print('page_graph:69> #patterns', len(patterns))
+        for it in db_response:
+            # (id, pattern, ent, timestamp)
+            patterns.append({'label':'CUSTOM', 'pattern':it[1], 'id':it[2]})
+        # print('page_graph:69>', time.time() - start)
+        # print('page_graph:69> #new patterns', len(patterns))
         
         _, new_patterns = self.parser.extract_terms(body_text, patterns=patterns)
         # print(self.parser.terms)
-        print('page_graph:72>', time.time() - start)
+        # print('page_graph:72>', time.time() - start)
 
         # print('Building document heirarchy...')
         headings = []
@@ -82,12 +129,14 @@ class PageGraphSpider(scrapy.Spider):
 
         # Exit function if no headers
         if len(headings) == 0:
-            # print('NO HEADINGS')
+            print('page_graph:113> NO HEADINGS')
             if self.save_dir is not None:
                 with open(os.path.join(self.save_dir, 'scraped_urls.txt'), 'a', encoding='utf-8') as f:
                     f.write(response.url + ', FALSE\n')
                 self.counter += 1
-            return None
+
+            # Redirect to self.parse
+            raise Exception
         
         tokenized_headings = []
         for tag, text in headings:
@@ -152,11 +201,21 @@ class PageGraphSpider(scrapy.Spider):
 
             self.counter += 1
 
-        yield {
+        return {
             'graph' : _networkx_to_dict(largest_tree),
             'patterns' : new_patterns,
             'url' : response.url
         }
+
+        # self.task_queue.update_completed(self.task_id)
+
+        # '''Get next task'''
+        # # End spider if no more URLs to process 
+        # if self.task_queue.is_empty():
+        #     return None
+
+        # self.task_id, url = self.task_queue.peek()
+        # yield scrapy.Request(url, callback=self.parse)
 
 def _extract_headings(response, headers=[], tags={}):
     """
