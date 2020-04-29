@@ -39,7 +39,11 @@ def get_data(query):
     data['links'] = []
 
     for node, attr in gr.nodes(data=True):
-        data['nodes'].append({'id' : node, 'group': 1, 'score' : attr['weight']})
+        data['nodes'].append({
+            'id' : node, 
+            'group': 1 if node == query else 0, 
+            'score' : round(attr['weight'], 2)
+        })
 
     # print(data['nodes'])
     for source, target, attr in gr.edges(data=True):

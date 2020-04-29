@@ -24,3 +24,8 @@ text {
     width: 50%;
     float: right;
 }
+
+#concept-table {
+    margin-left: auto;
+    margin-right: auto;
+}

@@ -30,7 +30,9 @@
 
         <div id="right_col">
             <!-- <svg width="960" height="600"></svg> -->
-
+            <div class='svg-container'></div>
+            
+            <table id="concept-table"></table>
         </div>
     </div>
 
@@ -47,10 +49,7 @@
 var width = 960;
 var height = 700;
 
-d3.select("div#right_col")
-   .append("div")
-   // Container class to make it responsive.
-   .classed("svg-container", true) 
+d3.select("div.svg-container")
    .append("svg")
    // Responsive SVG needs these 2 attributes and no width and height attr.
    .attr("preserveAspectRatio", "xMinYMin meet")
@@ -97,7 +96,7 @@ d3.json("{{ url_for('get_data', query=query_name)}}", function(error, graph) {
     
     var circles = node.append("circle")
         .attr("r", function(d) { return 5*d.score; })
-        .attr("fill", function(d) { return color(d.group); })
+        .attr("fill", function(d) { return d.group == 1 ? "#ff9999" : "#1f77b4"; })
         .call(d3.drag()
             .on("start", dragstarted)
             .on("drag", dragged)
@@ -223,6 +222,29 @@ d3.json("{{ url_for('get_data', query=query_name)}}", function(error, graph) {
         //     .attr('r', nodeRadius);
     });
 
+    // Concept Table
+    graph.nodes.sort(function(a,b) { return b.score - a.score });
+    var num_columns = 3;
+    var num_rows = Math.ceil(graph.nodes.length / num_columns);
+
+    var rows = [];
+    for (var i=0; i < num_rows; i++) {
+        rows.push("")
+    }
+
+    for (var i=0; i < graph.nodes.length; i++) {        
+        // var col = Math.floor(i / num_rows);
+        var row = i % num_rows;
+        var cell = "<td>" + graph.nodes[i].id + " " + graph.nodes[i].score + "</td>";
+        // console.log(cell);
+        
+        rows[row] += cell;        
+    }
+    // console.log(rows);
+
+    for (var i=0; i < num_rows; i++) {
+        $("#concept-table").append("<tr>" + rows[i] + "</tr>");
+    }
 });
 
 function dragstarted(d) {
@@ -241,6 +263,5 @@ function dragended(d) {
   d.fx = null;
   d.fy = null;
 }
-
 
 </script>
