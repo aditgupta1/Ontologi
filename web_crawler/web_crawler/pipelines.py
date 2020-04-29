@@ -21,12 +21,20 @@ class DBStorePipeline(object):
         graph
     """
     
-    def __init__(self):
-        self.dynamodb = DynamoDB(region_name='us-west-2', endpoint_url='http://localhost:5000')
+    def __init__(self, dynamodb_region_name='us-west-2',
+            dynamodb_uri='http://localhost:5000',
+            neo4j_uri='bolt://localhost:7687',
+            neo4j_user='neo4j', neo4j_password='pswd',
+            sql_path='../test.db'):
+        self.dynamodb = DynamoDB(region_name=dynamodb_region_name, 
+            endpoint_url=dynamodb_uri)
         self.pages_table = self.dynamodb.get_pages_table()
-        # self.patterns_table = self.dynamodb.get_patterns_table()
-        self.graph = GraphDB(uri='bolt://localhost:7687', user='neo4j', password='pswd')
-        self.sql = SqlDB('../test.db')
+        self.graph = GraphDB(uri=neo4j_uri, user=neo4j_user, password=neo4j_password)
+        self.sql = SqlDB(path=sql_path)
+
+    # @classmethod
+    # def from_crawler(cls, crawler):
+    #     print(crawler.spider.
 
     def process_item(self, item, spider):
         graph = item['graph']
@@ -68,10 +76,15 @@ class DBStorePipeline(object):
         #         )
         # for pat in patterns:
 
-        self.sql.conn.executemany("INSERT INTO PATTERNS (PATTERN, ENT, TIMESTAMP) VALUES (?, ?, ?)", 
-            [(pat['pattern'], pat['id'], timestamp()) for pat in patterns])
+        query = "INSERT INTO PATTERNS (PATTERN, ENT, TIMESTAMP, FREQ) VALUES (?, ?, ?, 0)"
+        self.sql.executemany(query, [(pat['pattern'], pat['id'], timestamp()) for pat in patterns])
         self.sql.commit()
         print('pipelines:105>', time.time() - start)
+
+        # Add frequency info to SQL patterns table
+        freq_data = [(freq, pattern, ent_id) for (ent_id, pattern), freq in item['freq_data'].items()]
+        query = "UPDATE PATTERNS SET FREQ = FREQ + ? WHERE PATTERN = ? AND ENT = ?"
+        self.sql.executemany(query, freq_data)
 
         '''Add graph to Pages table
         If exists already, subtract old nodes/edges from global graph and

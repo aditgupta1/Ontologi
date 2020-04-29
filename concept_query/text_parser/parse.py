@@ -35,8 +35,10 @@ class Parser(object):
             patterns: new patterns
         returns:
             list of top terms
+            store_patterns: patterns to store in database
+            freq_data: hit frequency for all entities parsed from page
         """
-        self.terms, self.nlp, self.entity_ruler, self.ruler_patterns_set, store_patterns, pattern_hits = \
+        self.terms, self.nlp, self.entity_ruler, self.ruler_patterns_set, store_patterns, freq_data = \
             extract_top_terms(text, self.nlp, self.entity_ruler,
                             ruler_patterns_set=self.ruler_patterns_set,
                             stopwords=self.stopwords, 
@@ -44,7 +46,7 @@ class Parser(object):
                             patterns=patterns)
         print('Top terms extracted successfully!')
 
-        return self.terms, store_patterns, pattern_hits
+        return self.terms, store_patterns, freq_data
 
     def extract_heading_terms(self, text):
         """

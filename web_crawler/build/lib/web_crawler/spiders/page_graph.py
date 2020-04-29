@@ -69,7 +69,7 @@ class PageGraphSpider(scrapy.Spider):
         #     endpoint_url=kwargs['dynamodb_uri'])
         # self.table = self.db.get_patterns_table()
 
-        self.sql = SqlDB(kwargs['sql_path'])
+        self.sql = SqlDB(path=kwargs['sql_path'])
         self.last_read = 0
 
     # def parse(self, response):
@@ -118,7 +118,7 @@ class PageGraphSpider(scrapy.Spider):
         print('page_graph:69>', time.time() - start)
         print('page_graph:69> #new patterns', len(patterns))
         
-        _, new_patterns = self.parser.extract_terms(body_text, patterns=patterns)
+        _, new_patterns, freq_data = self.parser.extract_terms(body_text, patterns=patterns)
         # print(self.parser.terms)
         print('page_graph:72>', time.time() - start)
 
@@ -203,7 +203,8 @@ class PageGraphSpider(scrapy.Spider):
         yield {
             'graph' : _networkx_to_dict(largest_tree),
             'patterns' : new_patterns,
-            'url' : response.url
+            'url' : response.url,
+            'freq_data' : freq_data
         }
 
         # self.task_queue.update_completed(self.task_id)

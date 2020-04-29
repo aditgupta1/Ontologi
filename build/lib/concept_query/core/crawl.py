@@ -141,7 +141,7 @@ class GraphCrawl(object):
         # Get patterns and convert to python dict
         db_response = self.sql.execute('SELECT * FROM PATTERNS')
         patterns = {}
-        for _, pattern, ent_id, _ in db_response:
+        for _, pattern, ent_id, _, _ in db_response:
             if pattern in patterns.keys():
                 # print(item['pattern'], patterns[item['pattern']], item['id'])
                 patterns[pattern].add(ent_id)

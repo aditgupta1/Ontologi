@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
         print('Tables deleted successfully!')
 
-        sql = SqlDB(config['SQL_LOCAL']['PATH'])
+        sql = SqlDB(path=config['SQL_LOCAL']['PATH'])
         sql.delete()
 
     crawler = GraphCrawl(n_crawlers=8, iterations=2, pages_per_concept=5,

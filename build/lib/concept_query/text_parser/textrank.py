@@ -291,9 +291,9 @@ def extract_top_terms(text, nlp, ruler, ruler_patterns_set,
     phrase_patterns = get_phrase_patterns(doc, plural_to_singular)
     all_patterns = patterns + entity_patterns + phrase_patterns
     # Get new patterns to add to pipe
-    print('textrank:288>', len(list(ruler_patterns_set)))
+    # print('textrank:288>', len(list(ruler_patterns_set)))
     new_patterns = new_deduplicated_variants(all_patterns, ruler_patterns_set, stopwords)
-    print('textrank:290>', len(new_patterns), len(list(ruler_patterns_set)))
+    # print('textrank:290>', len(new_patterns), len(list(ruler_patterns_set)))
     print('textrank:287>', time.time() - start)
 
     # ruler = EntityRuler(nlp)
@@ -305,12 +305,20 @@ def extract_top_terms(text, nlp, ruler, ruler_patterns_set,
     print('textrank:295>', time.time() - start)
 
     pattern_hits = set([])
+    freq_data = {} # (pattern, freq) key-value pairs
     # Retokenize entities
     modified_doc = nlp(text)
     with modified_doc.retokenize() as retokenizer:
         for ent in modified_doc.ents:
             retokenizer.merge(ent)
             pattern_hits.add(ent.text)
+
+            pair = (ent.ent_id_, ent.text)
+            if pair in freq_data.keys():
+                freq_data[pair] += 1
+            else:
+                freq_data[pair] = 1
+
     print('textrank:302>', time.time() - start)
 
     # Compile new patterns to add to DB
@@ -357,5 +365,12 @@ def extract_top_terms(text, nlp, ruler, ruler_patterns_set,
     sorted_terms = sorted(calculated_page_rank, key=calculated_page_rank.get,reverse=True)
     print('textrank:346>', time.time() - start)
     print('text_rank:347>', len(store_patterns))
-    return sorted_terms[:len(sorted_terms) // 3], nlp, ruler, ruler_patterns_set, store_patterns
+
+    # print(freq_data)
+    # for pat in store_patterns:
+    #     assert (pat['id'], pat['pattern']) in freq_data.keys(), \
+    #         f"{pat['id']}, {pat['pattern']}"
+
+    return sorted_terms[:len(sorted_terms) // 3], nlp, ruler, \
+        ruler_patterns_set, store_patterns, freq_data
     
