@@ -9,6 +9,7 @@ from lxml.html import fromstring
 import multiprocessing
 from itertools import cycle
 from lxml import etree
+from pprint import pprint
 
 class GoogleSearch:
     def __init__(self, max_proc=8, use_proxy=False):
@@ -111,18 +112,22 @@ def _search(query, n_results=10, proxies=[], full=False):
         #     f.write(s)
 
         for result in parser.xpath('//li[@class="b_algo"]'):
-            href = result.xpath('h2/a')[0].get('href')
-            if href not in url_set:
-                if full:
-                    item = {
-                        'url' : href,
-                        'title' : ' '.join(result.xpath('h2/a//text()')),
-                        'caption' : ' '.join(result.xpath('div[@class="b_caption"]//p//text()'))
-                    }
-                else:
-                    item = href
-                searchResults.append(item)
-                url_set.add(href)
+            # pprint(etree.tostring(result, pretty_print=True))
+            try:
+                href = result.xpath('h2//a')[0].get('href')
+                if href not in url_set:
+                    if full:
+                        item = {
+                            'url' : href,
+                            'title' : ' '.join(result.xpath('h2/a//text()')),
+                            'caption' : ' '.join(result.xpath('div[@class="b_caption"]//p//text()'))
+                        }
+                    else:
+                        item = href
+                    searchResults.append(item)
+                    url_set.add(href)
+            except IndexError:
+                pass
         i += 1
 
         time.sleep(1)

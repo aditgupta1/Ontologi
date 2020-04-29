@@ -118,7 +118,7 @@ class PageGraphSpider(scrapy.Spider):
         print('page_graph:69>', time.time() - start)
         print('page_graph:69> #new patterns', len(patterns))
         
-        _, new_patterns = self.parser.extract_terms(body_text, patterns=patterns)
+        _, new_patterns, pattern_hits = self.parser.extract_terms(body_text, patterns=patterns)
         # print(self.parser.terms)
         print('page_graph:72>', time.time() - start)
 
@@ -203,7 +203,8 @@ class PageGraphSpider(scrapy.Spider):
         yield {
             'graph' : _networkx_to_dict(largest_tree),
             'patterns' : new_patterns,
-            'url' : response.url
+            'url' : response.url,
+            'pattern_hits' : list(pattern_hits)
         }
 
         # self.task_queue.update_completed(self.task_id)

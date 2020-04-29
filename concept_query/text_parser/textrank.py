@@ -357,5 +357,6 @@ def extract_top_terms(text, nlp, ruler, ruler_patterns_set,
     sorted_terms = sorted(calculated_page_rank, key=calculated_page_rank.get,reverse=True)
     print('textrank:346>', time.time() - start)
     print('text_rank:347>', len(store_patterns))
-    return sorted_terms[:len(sorted_terms) // 3], nlp, ruler, ruler_patterns_set, store_patterns
+    return sorted_terms[:len(sorted_terms) // 3], nlp, ruler, \
+        ruler_patterns_set, store_patterns, pattern_hits
     

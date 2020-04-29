@@ -9,7 +9,8 @@ class SqlDB(object):
             (ID INTEGER PRIMARY KEY     AUTOINCREMENT,
             PATTERN        TEXT     NOT NULL,
             ENT            TEXT     NOT NULL,
-            TIMESTAMP      INT      NOT NULL);''')
+            TIMESTAMP      INT      NOT NULL,
+            FREQ           INT      NOT NULL);''')
         
     def execute(self, query, params=None):
         if params is None:

@@ -40,18 +40,18 @@ class PageGraphSpider(scrapy.Spider):
         }
 
         '''Get starting url'''
-        # with open(kwargs['url_path'], 'r') as f:
-        #     start_urls = f.readlines()
-        # self.start_urls = [x.strip('\n') for x in start_urls]
+        with open(kwargs['url_path'], 'r') as f:
+            start_urls = f.readlines()
+        self.start_urls = [x.strip('\n') for x in start_urls]
 
-        self.task_queue = TaskQueue(kwargs['task_queue_path'])
+        # self.task_queue = TaskQueue(kwargs['task_queue_path'])
         # print('48>', self.task_queue.select())
 
-        if self.task_queue.is_empty():
-            self.start_urls = []
-        else:
-            self.task_id, url = self.task_queue.peek()
-            self.start_urls = [url,]
+        # if self.task_queue.is_empty():
+        #     self.start_urls = []
+        # else:
+        #     self.task_id, url = self.task_queue.peek()
+        #     self.start_urls = [url,]
 
         print('page_graph:54>start urls', self.start_urls)
 
@@ -72,29 +72,29 @@ class PageGraphSpider(scrapy.Spider):
         self.sql = SqlDB(kwargs['sql_path'])
         self.last_read = 0
 
+    # def parse(self, response):
+    #     try:
+    #         yield self._parse(response)
+    #     except:
+    #         print('ERROR')
+    #         pass
+
+    #     self.task_queue.update_completed(self.task_id)
+
+    #     '''Get next task'''
+    #     # End spider if no more URLs to process 
+    #     if self.task_queue.is_empty():
+    #         return None
+
+    #     self.task_id, url = self.task_queue.peek()
+    #     yield scrapy.Request(url, callback=self.parse)
+
     def parse(self, response):
-        try:
-            yield self._parse(response)
-        except:
-            print('ERROR')
-            pass
-
-        self.task_queue.update_completed(self.task_id)
-
-        '''Get next task'''
-        # End spider if no more URLs to process 
-        if self.task_queue.is_empty():
-            return None
-
-        self.task_id, url = self.task_queue.peek()
-        yield scrapy.Request(url, callback=self.parse)
-
-    def _parse(self, response):
         print('page_graph:49>', response.url)
 
         # Update task status to working
-        print('page_graph:77>', self.task_id)
-        self.task_queue.update_working(self.task_id)
+        # print('page_graph:77>', self.task_id)
+        # self.task_queue.update_working(self.task_id)
 
         # print('page_graph:80>', self.task_queue.select())
 
@@ -109,18 +109,18 @@ class PageGraphSpider(scrapy.Spider):
         tmp = self.last_read
         self.last_read = int(time.time())
         db_response = self.sql.execute('SELECT * FROM PATTERNS WHERE TIMESTAMP >= ?', (tmp,))
-        # print('page_graph:65>read database', time.time() - start)
+        print('page_graph:65>read database', time.time() - start)
 
         patterns = []
         for it in db_response:
             # (id, pattern, ent, timestamp)
             patterns.append({'label':'CUSTOM', 'pattern':it[1], 'id':it[2]})
-        # print('page_graph:69>', time.time() - start)
-        # print('page_graph:69> #new patterns', len(patterns))
+        print('page_graph:69>', time.time() - start)
+        print('page_graph:69> #new patterns', len(patterns))
         
         _, new_patterns = self.parser.extract_terms(body_text, patterns=patterns)
         # print(self.parser.terms)
-        # print('page_graph:72>', time.time() - start)
+        print('page_graph:72>', time.time() - start)
 
         # print('Building document heirarchy...')
         headings = []
@@ -135,8 +135,7 @@ class PageGraphSpider(scrapy.Spider):
                     f.write(response.url + ', FALSE\n')
                 self.counter += 1
 
-            # Redirect to self.parse
-            raise Exception
+            return None
         
         tokenized_headings = []
         for tag, text in headings:
@@ -201,7 +200,7 @@ class PageGraphSpider(scrapy.Spider):
 
             self.counter += 1
 
-        return {
+        yield {
             'graph' : _networkx_to_dict(largest_tree),
             'patterns' : new_patterns,
             'url' : response.url
