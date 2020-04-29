@@ -4,6 +4,7 @@
     <head>
         <meta charset="utf-8">
         <title>{{ query_name }}</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
         <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet" type="text/css">
     </head>
 
@@ -23,12 +24,12 @@
             <form action="{{ url_for('index') }}" method = "POST">
                 <!-- <label for="search">Search:</label><br> -->
                 <input type="text" id="search" name="search_path" value="{{ query_name }}">
-                <input type="submit" id="search-btn" value="Search">
+                <a href="#" class="myButton">Search</a>
             </form>
             <body> 
                 {% for link in links %}
                 <br>
-                <a href = {{link.url}} style="font-size: 12px; text-decoration: none">{{link.url}}</a>
+                <a href = {{link.url}} style="font-size: 12px; white-space: nowrap; overflow: hidden;text-overflow: ellipsis; max-width: 200px;text-decoration: none">{{link.url}}</a>
                 <div id = "title">
                     <h6 style="margin:0;"><a href = {{link.url}} style="font-size: 17px; text-decoration: none">{{link.title}}</a></h6>
                 </div>
@@ -57,6 +58,8 @@
   src="https://code.jquery.com/jquery-3.5.0.min.js"
   integrity="sha256-xNzN2a4ltkB44Mc/Jz3pT4iU1cmeR0FkXs4pru/JxaQ="
   crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 <script>
 
 var width = 960;
