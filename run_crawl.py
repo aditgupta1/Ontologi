@@ -35,15 +35,17 @@ if __name__ == '__main__':
 
     # DB configs
     config = toml.load('config.toml')
+    neo4j_config = config['NEO4J_LOCAL']
+    sql_config = config['SQL_CLOUD']
 
     if args.stop:
         stop_crawlers()
         exit()
 
     if args.delete:
-        graph = GraphDB(uri=config['NEO4J_LOCAL']['URI'],
-            user=config['NEO4J_LOCAL']['USERNAME'],
-            password=config['NEO4J_LOCAL']['PASSWORD'])
+        graph = GraphDB(uri=neo4j_config['URI'],
+            user=neo4j_config['USER'],
+            password=neo4j_config['PASSWORD'])
         graph.delete_table()
 
         dynamodb = DynamoDB(region_name=config['DYNAMODB_LOCAL']['REGION_NAME'],
@@ -53,13 +55,13 @@ if __name__ == '__main__':
 
         print('Tables deleted successfully!')
 
-        sql = SqlDB(path=config['SQL_LOCAL']['PATH'])
+        sql = SqlDB.fromconfig(sql_config)
         sql.delete()
 
-    crawler = GraphCrawl(n_crawlers=8, iterations=2, pages_per_concept=5,
+    crawler = GraphCrawl(n_crawlers=16, iterations=2, pages_per_concept=5,
                         dynamodb_config=config['DYNAMODB_LOCAL'],
-                        neo4j_config=config['NEO4J_LOCAL'],
-                        sql_config=config['SQL_LOCAL'],
+                        neo4j_config=neo4j_config,
+                        sql_config=sql_config,
                         task_queue_config=config['TASK_QUEUE'])
 
     # Run crawlers

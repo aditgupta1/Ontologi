@@ -282,6 +282,9 @@ def extract_top_terms(text, nlp, ruler, ruler_patterns_set,
         patterns: list of new patterns (from database)
     returns:
         list of strings
+
+    ref:
+        https://spacy.io/usage/rule-based-matching#entityruler
     """
     start = time.time()
     doc = nlp(text)

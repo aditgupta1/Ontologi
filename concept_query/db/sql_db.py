@@ -29,7 +29,7 @@ class SqlDB(object):
                 FREQ           INT      NOT NULL);''')
             print("PATTERNS table created successfully!")
         elif dbtype == 'mysql':
-            print("Connected MySQL database...")
+            print("Connecting MySQL database...")
             assert 'host' in kwargs.keys()
             assert 'user' in kwargs.keys()
             assert 'database' in kwargs.keys()
@@ -49,13 +49,26 @@ class SqlDB(object):
             print("PATTERNS table created successfully!")
         else:
             raise ValueError(dbtype + ' database not supported')
+
+    @classmethod
+    def fromconfig(cls, config):
+        if config['DBTYPE'] == 'sqlite3':
+            return cls(dbtype=config['DBTYPE'], path=config['PATH'])
+        elif config['DBTYPE'] == 'mysql':
+            return cls(dbtype=config['DBTYPE'], 
+                host=config['HOST'],
+                user=config['USER'],
+                database=config['DATABASE'])
+
+        raise ValueError(config['DBTYPE'] + ' database not supported')
         
     def execute(self, query, params=None):
         if params is None:
             if self.dbtype == 'sqlite3':
                 return self.conn.execute(query)
             elif self.dbtype == 'mysql':
-                return self.cursor.execute(query).fetchall()
+                self.cursor.execute(query)
+                return self._mysql_fetch()
             else:
                 raise ValueError(self.dbtype + ' database not supported')
         
@@ -64,7 +77,8 @@ class SqlDB(object):
         elif self.dbtype == 'mysql':
             # MySQL parameterized arguments uses %s instead of ?
             query = query.replace('?', '%s')
-            return self.cursor.execute(query, params).fetchall()
+            self.cursor.execute(query, params)
+            return self._mysql_fetch()
         
         raise ValueError(self.dbtype + ' database not supported')
 
@@ -77,10 +91,19 @@ class SqlDB(object):
                 except sqlite3.OperationalError:
                     time.sleep(0.5)
                     i += 1
+            return
+        
         elif self.dbtype == 'mysql':
             # MySQL parameterized arguments uses %s instead of ?
             query = query.replace('?', '%s')
-            return self.cursor.executemany(query, params).fetchall()
+            i = 0
+            while i < max_retries:
+                try:
+                    self.cursor.executemany(query, params)
+                    return self._mysql_fetch()
+                except mysql.connector.errors.DatabaseError:
+                    time.sleep(0.5)
+                    i += 1
 
         raise ValueError(self.dbtype + ' database not supported')
 
@@ -102,3 +125,9 @@ class SqlDB(object):
             raise ValueError(self.dbtype + ' database not supported')
 
         print("SQL table deleted successfully!")
+
+    def _mysql_fetch(self):
+        try:
+            return self.cursor.fetchall()
+        except mysql.connector.errors.InterfaceError:
+            return None

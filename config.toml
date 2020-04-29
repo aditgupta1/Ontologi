@@ -2,22 +2,34 @@
 REGION_NAME = "us-west-2"
 URI = "http://localhost:5000"
 
+[DYNAMODB_CLOUD]
+AWS_ACCESS_KEY_ID = "AKIAVVYHV6FDZO775QXI"
+AWS_SECRET_ACCESS_KEY = "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"
+
 [NEO4J_LOCAL]
-USERNAME = "neo4j"
+USER = "neo4j"
 PASSWORD = "pswd"
 URI = "bolt://localhost:7687"
 # Localhost must have encrypted off
 ENCRYPTED = false 
 
 [NEO4J_CLOUD]
-USERNAME = "neo4j"
+USER = "neo4j"
 PASSWORD = "password"
 URI = "bolt://34.74.158.108:7687"
 # Remote must have encrypted on
 ENCRYPTED = true
 
 [SQL_LOCAL]
+DBTYPE = "sqlite3"
 PATH = "test.db"
+
+# Google Cloud
+[SQL_CLOUD]
+DBTYPE = "mysql"
+HOST = "127.0.0.1"
+USER = "root"
+DATABASE = "test"
 
 [TASK_QUEUE]
 PATH = "task_queue.db"

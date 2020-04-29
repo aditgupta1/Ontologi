@@ -36,9 +36,11 @@ class GraphCrawl(object):
         self.googlesearch = GoogleSearch(max_proc=16)
 
         # Databases
+        self.dynamodb_config = dynamodb_config
+
         self.neo4j_config = neo4j_config
         self.graph = GraphDB(uri=neo4j_config['URI'],
-            user=neo4j_config['USERNAME'], 
+            user=neo4j_config['USER'], 
             password=neo4j_config['PASSWORD'],
             encrypted=neo4j_config['ENCRYPTED'])
 
@@ -48,7 +50,9 @@ class GraphCrawl(object):
         # self.patterns_table = self.dynamodb.get_patterns_table()
 
         self.sql_config = sql_config
-        self.sql = SqlDB(path=sql_config['PATH'])
+        if 'PATH' in sql_config.keys():
+            self.sql_config['PATH'] = os.path.abspath(sql_config['PATH'])
+        self.sql = SqlDB.fromconfig(self.sql_config)
 
         # # Task Queue
         # self.task_queue_config = task_queue_config
@@ -86,16 +90,20 @@ class GraphCrawl(object):
             # print(self.task_queue.select())
 
             for i in range(self.n_crawlers):
-                response = requests.post('http://localhost:6800/schedule.json', data={
+                data = {
                     'project' : 'web_crawler',
                     'spider' : 'page_graph',
                     'url_path' : crawler_paths[i],
                     # 'task_queue_path' : os.path.abspath(self.task_queue_config['PATH']),
                     # 'save_name' : f'spider-{i+1}_{it}'
-                    # 'dynamodb_region_name' : self.dynamodb_config['REGION_NAME'],
-                    # 'dynamodb_uri' : self.dynamodb_config['URI']
-                    'sql_path' : os.path.abspath(self.sql_config['PATH'])
-                })
+                    'dynamodb_region_name' : self.dynamodb_config['REGION_NAME'],
+                    'dynamodb_uri' : self.dynamodb_config['URI'],
+                    'neo4j_uri' : self.neo4j_config['URI'],
+                    'neo4j_user' : self.neo4j_config['USER'],
+                    'neo4j_password' : self.neo4j_config['PASSWORD'],
+                    'sql_config' : json.dumps(self.sql_config)
+                }
+                response = requests.post('http://localhost:6800/schedule.json', data=data)
                 print(response.text)
 
             is_finished = False

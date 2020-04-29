@@ -25,6 +25,12 @@
                 <input type="text" id="search" name="search_path" value="{{ query_name }}">
                 <input type="submit" id="search-btn" value="Search">
             </form>
+            <div id="search-concepts">
+                {% for concept in concepts %}
+                <span>{{ concept }}</span>
+                {% endfor %}
+            </div>
+
             <body> 
                 {% for link in links %}
                 <br>
