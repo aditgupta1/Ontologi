@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>{{ query_name }}</title>
+        <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet" type="text/css">
+    </head>
+
+    <body>
+    <div id="header">
+        <div id="heading" style="float: left; width: 50%; padding-left: 5%;">
+            <h1>ConceptQuery</h1>
+        </div>
+        
+        <div id="github" style="float: right; width: 10%;">
+            <a href="https://github.com/aditgupta1/ConceptQuery">View on GitHub</a>
+        </div>
+    </div>
+
+    <div id="wrap">
+        <div id="left_col">
+            <form action="{{ url_for('index') }}" method = "POST">
+                <!-- <label for="search">Search:</label><br> -->
+                <input type="text" id="search" name="search_path" value="{{ query_name }}">
+                <input type="submit" id="search-btn" value="Search">
+            </form>
+            <body> 
+                {% for link in links %}
+                <br>
+                <a href = {{link.url}} style="font-size: 12px; text-decoration: none">{{link.url}}</a>
+                <div id = "title">
+                    <h6 style="margin:0;"><a href = {{link.url}} style="font-size: 17px; text-decoration: none">{{link.title}}</a></h6>
+                </div>
+                <div>
+                    <p style="margin:0; font-size: 14px;">{{link.caption}}</p>
+                </div>
+                {% endfor %}
+            </body>
+
+        </div>
+
+
+        <div id="right_col">
+            <!-- <svg width="960" height="600"></svg> -->
+            <div class='svg-container'></div>
+            
+            <table id="concept-table"></table>
+        </div>
+    </div>
+
+    </body>
+</html>
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script
+  src="https://code.jquery.com/jquery-3.5.0.min.js"
+  integrity="sha256-xNzN2a4ltkB44Mc/Jz3pT4iU1cmeR0FkXs4pru/JxaQ="
+  crossorigin="anonymous"></script>
+<script>
+
+var width = 960;
+var height = 700;
+
+d3.select("div.svg-container")
+   .append("svg")
+   // Responsive SVG needs these 2 attributes and no width and height attr.
+   .attr("preserveAspectRatio", "xMinYMin meet")
+   .attr("viewBox", "0 0 " + width +" " + height)
+   // Class to make it responsive.
+   .classed("svg-content-responsive", true);
+   // Fill with a rectangle for visualization.
+//    .append("rect")
+//    .classed("rect", true)
+//    .attr("width", 600)
+//    .attr("height", 400);
+
+
+var svg = d3.select("svg");
+// var width = +svg.attr("width");
+// var height = +svg.attr("height");
+
+console.log(width, height);
+
+
+var color = d3.scaleOrdinal(d3.schemeCategory20);
+
+var simulation = d3.forceSimulation()
+    .force("link", d3.forceLink().id(function(d) { return d.id; }))
+    .force("charge", d3.forceManyBody().strength(-1000))
+    .force("center", d3.forceCenter(width / 2, height / 2))
+    .force("collide",d3.forceCollide().radius(d => d.r * 10));
+
+d3.json("{{ url_for('get_data', query=query_name)}}", function(error, graph) {
+    if (error) throw error;
+
+    var link = svg.append("g")
+        .attr("class", "links")
+        .selectAll("line")
+        .data(graph.links)
+        .enter().append("line")
+        .attr("stroke-width", function(d) { return 0.1 * Math.sqrt(d.value); });
+
+    var node = svg.append("g")
+        .attr("class", "nodes")
+        .selectAll("g")
+        .data(graph.nodes)
+        .enter().append("g")
+    
+    var circles = node.append("circle")
+        .attr("r", function(d) { return 5*d.score; })
+        .attr("fill", function(d) { return d.group == 1 ? "#ff9999" : "#1f77b4"; })
+        .call(d3.drag()
+            .on("start", dragstarted)
+            .on("drag", dragged)
+            .on("end", dragended))
+        .on('click', function(d) {
+            $('#search').val(d.id);
+            $('#search-btn').click();
+            // window.location.replace(href);
+        });
+
+    var lables = node.append("text")
+        .text(function(d) {
+            return d.id;
+        })
+        .attr('x', 6)
+        .attr('y', 3);
+
+    node.append("title")
+        .text(function(d) { return d.id; });
+
+    simulation
+        .nodes(graph.nodes)
+        .on("tick", ticked);
+
+    simulation.force("link")
+        .links(graph.links);
+
+    function ticked() {
+        link
+            .attr("x1", function(d) { return d.source.x; })
+            .attr("y1", function(d) { return d.source.y; })
+            .attr("x2", function(d) { return d.target.x; })
+            .attr("y2", function(d) { return d.target.y; });
+
+        node
+            .attr("transform", function(d) {
+                return "translate(" + d.x + "," + d.y + ")";
+            })
+    }
+
+    // Mouseover/mouseout events
+    let linkedByIndex = {};
+    graph.links.forEach((d) => {
+        linkedByIndex[`${d.source.index},${d.target.index}`] = true;
+    });
+
+    function isConnected(a, b) {
+        return isConnectedAsTarget(a, b) || isConnectedAsSource(a, b) || a.index === b.index;
+    }
+
+    function isConnectedAsSource(a, b) {
+        return linkedByIndex[`${a.index},${b.index}`];
+    }
+
+    function isConnectedAsTarget(a, b) {
+        return linkedByIndex[`${b.index},${a.index}`];
+    }
+
+    function isEqual(a, b) {
+        return a.index === b.index;
+    }
+
+    node.on('mouseover', function(d) {
+        var circle = d3.select(this);
+
+        node
+            .transition(500)
+            .style('opacity', o => {
+                isConnectedValue = isConnected(o, d);
+                if (isConnectedValue) {
+                    return 1.0;
+                }
+                return 0.2
+            })
+            // .style('fill', (o) => {
+            //     let fillColor;
+            //     if (isConnectedAsTarget(o, d) && isConnectedAsSource(o, d)) {
+            //         fillColor = 'green';
+            //     } else if (isConnectedAsSource(o, d)) {
+            //         fillColor = 'red';
+            //     } else if (isConnectedAsTarget(o, d)) {
+            //         fillColor = 'blue';
+            //     } else if (isEqual(o, d)) {
+            //         fillColor = 'hotpink';
+            //     } else {
+            //         fillColor = '#000';
+            //     }
+            //     return fillColor;
+            // });
+
+        link
+            .transition(500)
+            .attr('stroke-width', function(o) {
+                var width = (o.source === d || o.target === d ? 0.5 : 0.1)* o.value;
+                // console.log(width);
+                return width;
+            });
+            // .transition(500)
+            // .attr('marker-end', o => (o.source === d || o.target === d ? 'url(#arrowhead)' : 'url()'));
+
+        // circle
+        //     .transition(500)
+        //     .attr('r', () => 1.4 * nodeRadius(d));
+    });
+
+    node.on('mouseout', function () {
+        circle = d3.select(this);
+
+        node
+            .transition(500)
+            .style('opacity', 1.0);
+
+        link
+            .transition(500)
+            .attr('stroke-width', function(o) {
+                var width = 0.1* o.value;
+                // console.log(width);
+                return width;
+            });
+
+        // circle
+        //     .transition(500)
+        //     .attr('r', nodeRadius);
+    });
+
+    // Concept Table
+    graph.nodes.sort(function(a,b) { return b.score - a.score });
+    var num_columns = 3;
+    var num_rows = Math.ceil(graph.nodes.length / num_columns);
+
+    var rows = [];
+    for (var i=0; i < num_rows; i++) {
+        rows.push("")
+    }
+
+    for (var i=0; i < graph.nodes.length; i++) {        
+        // var col = Math.floor(i / num_rows);
+        var row = i % num_rows;
+        var cell = "<td>" + graph.nodes[i].id + " " + graph.nodes[i].score + "</td>";
+        // console.log(cell);
+        
+        rows[row] += cell;        
+    }
+    // console.log(rows);
+
+    for (var i=0; i < num_rows; i++) {
+        $("#concept-table").append("<tr>" + rows[i] + "</tr>");
+    }
+});
+
+function dragstarted(d) {
+  if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+  d.fx = d.x;
+  d.fy = d.y;
+}
+
+function dragged(d) {
+  d.fx = d3.event.x;
+  d.fy = d3.event.y;
+}
+
+function dragended(d) {
+  if (!d3.event.active) simulation.alphaTarget(0);
+  d.fx = null;
+  d.fy = null;
+}
+
+</script>
