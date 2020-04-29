@@ -282,6 +282,9 @@ def extract_top_terms(text, nlp, ruler, ruler_patterns_set,
         patterns: list of new patterns (from database)
     returns:
         list of strings
+
+    ref:
+        https://spacy.io/usage/rule-based-matching#entityruler
     """
     start = time.time()
     doc = nlp(text)
@@ -365,7 +368,6 @@ def extract_top_terms(text, nlp, ruler, ruler_patterns_set,
     sorted_terms = sorted(calculated_page_rank, key=calculated_page_rank.get,reverse=True)
     print('textrank:346>', time.time() - start)
     print('text_rank:347>', len(store_patterns))
-<<<<<<< HEAD
 
     # print(freq_data)
     # for pat in store_patterns:
@@ -374,8 +376,4 @@ def extract_top_terms(text, nlp, ruler, ruler_patterns_set,
 
     return sorted_terms[:len(sorted_terms) // 3], nlp, ruler, \
         ruler_patterns_set, store_patterns, freq_data
-=======
-    return sorted_terms[:len(sorted_terms) // 3], nlp, ruler, \
-        ruler_patterns_set, store_patterns, pattern_hits
->>>>>>> 7e02c94140209fda44771da089b78511cbc06578
     
