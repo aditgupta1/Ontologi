@@ -49,20 +49,28 @@ with nlp.disable_pipes(*other_pipes):
     ruler.add_patterns(entity_patterns)
 nlp.add_pipe(ruler, before='ner')
 
+# Get most common pattern for each id
+common_pattern = {}
+for ent_id in entities.keys():
+    sorted_patterns = sorted(entities[ent_id], key=entities[ent_id].get, reverse=True)
+    common_pattern[ent_id] = sorted_patterns[0]
+
 @app.route('/', methods = ['GET','POST'])
 def index():
     if request.method == 'POST':
         if 'search_path' in request.form:
-            text = request.form['search_path'].replace('-', ' ')
-            concepts = parse(nlp, text)
+            search_text = request.form['search_path']
+
+            concepts = parse(nlp, search_text)
             print('58>', concepts)
             
             if len(concepts) > 0:
-                query = concepts[0]
-                link_data = g.search(query, full=True)
+                query = ';'.join(concepts)
+                link_data = g.search(search_text, full=True)
                 print('27>', query)
                 return render_template('testd3-adit.html', 
-                    query_name=query, links = link_data, concepts=concepts)
+                    query_name=query, links = link_data, concepts=[commonize(x) for x in concepts],
+                    search_text=search_text)
 
     return render_template('testd3-adit.html', query_name='tensorflow', 
         links = g.search('tensorflow', full=True), concepts=[])
@@ -72,7 +80,8 @@ def get_data(query):
     # with open('static/data/miserables.json', 'r') as f:
     #     data = json.load(f11)
     # query = 'tensorflow'
-    gr = client.get_result(query, prune=True)
+    concept_names = query.split(';')
+    gr = client.get_result(*concept_names, prune=True)
     # print('35>', gr.nodes)
 
     data = {}
@@ -82,8 +91,9 @@ def get_data(query):
     for node, attr in gr.nodes(data=True):
         data['nodes'].append({
             'id' : node, 
-            'group': 1 if node == query else 0, 
-            'score' : round(attr['weight'], 2)
+            'group': 1 if node in concept_names else 0, 
+            'score' : round(attr['weight'], 2),
+            'pattern' : commonize(node)
         })
 
     # print(data['nodes'])
@@ -116,6 +126,11 @@ def parse(nlp, text):
         concepts.append(noun)
 
     return concepts
+
+def commonize(concept):
+    if concept in common_pattern.keys():
+        return common_pattern[concept]
+    return concept
         
 if __name__ == '__main__':
     app.run(debug=True, port=1001)

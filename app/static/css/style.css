@@ -37,26 +37,24 @@ text {
 
 }
 
-#left_col {
-    width: 35%;
+#header {
+    padding-top: 20px;
+}
+
+#div-logo {
+    float: left; 
+    width: 10%; 
+    /* padding-left: 1%; */
+    text-align: center;
+}
+
+#div-search {
+    width : 30%;
     float: left;
-    padding-left: 5%;
-    padding-right: 10%;
-
 }
 
-#right_col {
-    width: 50%;
-    float: right;
-}
-
-#concept-table {
-    margin-left: auto;
-    margin-right: auto;
-}
-
-#search {
-    width: 100%;
+#search-bar {
+    width: 85%;
     box-sizing: border-box;
     border: 2px solid #ccc;
     border-radius: 4px;
@@ -69,4 +67,51 @@ text {
     padding: 12px 20px 12px 40px;
 }
 
+#left_col {
+    width: 50%;
+    float: left;
+    padding-left: 10%;
+    padding-right: 5%;
 
+}
+
+#right_col {
+    width: 50%;
+    float: right;
+}
+
+#concept-table {
+    margin-left: auto;
+    margin-right: auto;
+    width: 60%;
+    text-align: center;
+}
+
+.pattern {
+    font-size: 12px;
+}
+
+.score {
+    font-size: 8px;
+    color: #808080;
+}
+
+.search-concept {
+    background-color: #ff9999;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-radius: 10px;
+}
+
+td::after {     
+    display: block;
+    content:attr(title);
+    font-weight: bold;
+    color: transparent;
+    height: 1px;
+    margin-bottom: -1px;
+    visibility: hidden;
+    overflow: hidden;
+}

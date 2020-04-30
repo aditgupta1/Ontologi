@@ -10,8 +10,16 @@
 
     <body>
     <div id="header" style="overflow: hidden;">
-        <div id="heading" style="float: left; width: 20%; padding-left: 5%;">
-            <h1>ConceptQuery</h1>
+        <div id="div-logo">
+            <h2>Ontologi</h2>
+        </div>
+
+        <div id='div-search'>
+            <form action="{{ url_for('index') }}" method = "POST">
+                <!-- <label for="search">Search:</label><br> -->
+                <input type="text" id="search-bar" name="search_path" value="{{ search_text }}">
+                <a href="{{ url_for('index')}}" class="myButton">Search</a>
+            </form>
         </div>
         
         <div id="github" style="float: right; width: 10%;">
@@ -19,16 +27,14 @@
         </div>
     </div>
 
+    <hr>
+
     <div id="wrap">
         <div id="left_col">
-            <form action="{{ url_for('index') }}" method = "POST">
-                <!-- <label for="search">Search:</label><br> -->
-                <input type="text" id="search" name="search_path" value="{{ query_name }}">
-                <a href="{{ url_for('index')}}" class="myButton">Search</a>
-            </form>
-            <div id="search-concepts">
+            <div id="div-search-concepts">
+                <br>
                 {% for concept in concepts %}
-                <span>{{ concept }}</span>
+                <span class='search-concept'>{{ concept }}</span>
                 {% endfor %}
             </div>
 
@@ -114,7 +120,9 @@ d3.json("{{ url_for('get_data', query=query_name)}}", function(error, graph) {
         .attr("class", "nodes")
         .selectAll("g")
         .data(graph.nodes)
-        .enter().append("g")
+        .enter().append("g");
+
+    node.attr('id', function(d) { return 'n_' + d.id; });
     
     var circles = node.append("circle")
         .attr("r", function(d) { return 5*d.score; })
@@ -129,7 +137,7 @@ d3.json("{{ url_for('get_data', query=query_name)}}", function(error, graph) {
             // window.location.replace(href);
         });
 
-    var lables = node.append("text")
+    var labels = node.append("text")
         .text(function(d) {
             return d.id;
         })
@@ -182,8 +190,8 @@ d3.json("{{ url_for('get_data', query=query_name)}}", function(error, graph) {
     }
 
     node.on('mouseover', function(d) {
-        var circle = d3.select(this);
-
+        // var circle = d3.select(this);
+        
         node
             .transition(500)
             .style('opacity', o => {
@@ -192,22 +200,7 @@ d3.json("{{ url_for('get_data', query=query_name)}}", function(error, graph) {
                     return 1.0;
                 }
                 return 0.2
-            })
-            // .style('fill', (o) => {
-            //     let fillColor;
-            //     if (isConnectedAsTarget(o, d) && isConnectedAsSource(o, d)) {
-            //         fillColor = 'green';
-            //     } else if (isConnectedAsSource(o, d)) {
-            //         fillColor = 'red';
-            //     } else if (isConnectedAsTarget(o, d)) {
-            //         fillColor = 'blue';
-            //     } else if (isEqual(o, d)) {
-            //         fillColor = 'hotpink';
-            //     } else {
-            //         fillColor = '#000';
-            //     }
-            //     return fillColor;
-            // });
+            });
 
         link
             .transition(500)
@@ -216,16 +209,14 @@ d3.json("{{ url_for('get_data', query=query_name)}}", function(error, graph) {
                 // console.log(width);
                 return width;
             });
-            // .transition(500)
-            // .attr('marker-end', o => (o.source === d || o.target === d ? 'url(#arrowhead)' : 'url()'));
 
-        // circle
-        //     .transition(500)
-        //     .attr('r', () => 1.4 * nodeRadius(d));
+        // Bold pattern in table
+        let name = d3.select(this).attr('id').slice(2);
+        $('#c_'+name + ' .pattern').css('font-weight', 'bold');
     });
 
     node.on('mouseout', function () {
-        circle = d3.select(this);
+        // var circle = d3.select(this);
 
         node
             .transition(500)
@@ -242,6 +233,10 @@ d3.json("{{ url_for('get_data', query=query_name)}}", function(error, graph) {
         // circle
         //     .transition(500)
         //     .attr('r', nodeRadius);
+
+        // Un-Bold pattern in table
+        let name = d3.select(this).attr('id').slice(2);
+        $('#c_'+name + ' .pattern').css('font-weight', 'normal');
     });
 
     // Concept Table
@@ -256,8 +251,11 @@ d3.json("{{ url_for('get_data', query=query_name)}}", function(error, graph) {
 
     for (var i=0; i < graph.nodes.length; i++) {        
         // var col = Math.floor(i / num_rows);
-        var row = i % num_rows;
-        var cell = "<td>" + graph.nodes[i].id + " " + graph.nodes[i].score + "</td>";
+        let row = i % num_rows;
+        let title = graph.nodes[i].id + ' ' + graph.nodes[i].score;
+        let cell = "<td class='concept' id='c_" + graph.nodes[i].id + "' title='" + title + "'>" + 
+            "<span class='pattern'>" + graph.nodes[i].id + "</span> " + 
+            "<span class='score'>" + graph.nodes[i].score + "</span></td>";
         // console.log(cell);
         
         rows[row] += cell;        
@@ -267,6 +265,35 @@ d3.json("{{ url_for('get_data', query=query_name)}}", function(error, graph) {
     for (var i=0; i < num_rows; i++) {
         $("#concept-table").append("<tr>" + rows[i] + "</tr>");
     }
+
+    $('.pattern').on('mouseover', function() {
+        var name = $(this).parent().attr('id').slice(2);
+        // console.log(name);
+
+        node
+            .transition(500)
+            .style('opacity', o => {                
+                if (o.id == name) {
+                    return 1.0;
+                }
+                return 0.2
+            });
+
+        // Bold text
+        $(this).css('font-weight', 'bold');
+    });
+
+    $('.pattern').on('mouseout', function() {
+        var name = $(this).parent().attr('id').slice(2);
+        // console.log(name);
+
+        node
+            .transition(500)
+            .style('opacity', 1.0);
+
+        // Un-Bold text
+        $(this).css('font-weight', 'normal');
+    });
 });
 
 function dragstarted(d) {
