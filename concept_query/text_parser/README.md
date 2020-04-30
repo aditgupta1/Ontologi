@@ -1,7 +1,14 @@
 # Text Parser
 
-TextRank Implementation:
-https://github.com/davidadamojr/TextRank
+## Setup
+
+Install language model:
+
+```
+python -m spacy download en_core_web_sm
+```
+
+https://spacy.io/usage/models
 
 ## Keyterm Extraction Process
 
