@@ -10,6 +10,11 @@ Ontologi provides a new way to search the internet by finding lower-level and hi
 - Google Cloud Platform
 - D3.js
 
+## Setup
+To install Ontologi, clone this repository and run 
+
+```python setup.py install```
+
 ## Team
 - Albert Gong
 - Adit Gupta
