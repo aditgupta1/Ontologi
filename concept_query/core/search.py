@@ -27,6 +27,7 @@ class GraphSearch(object):
         Get networkx representation of query results
         args:
             query: entity id, multi-word phrase must be joined by hyphens
+                or list if entity ids
         returns:
             networkx digraph
         """
@@ -61,35 +62,31 @@ class GraphSearch(object):
 
         return gr
 
-    def get_neighbors(self, concept_name, weight_threshold=0):
+    def get_neighbors(self, concept_name):
         """
         Get neighbors of concept
         args:
             concept_name: name of node
-            weight_threshold: only nodes with weight >= this value 
-                will be returned
         returns:
             list of node names
         """
 
         query = "MATCH (a:Concept {name:$concept_name})--(b:Concept) " \
             "WHERE b.weight >= $threshold RETURN DISTINCT b.name AS name"
-        response = self.graph.run(query, concept_name=concept_name, threshold=weight_threshold)
+        response = self.graph.run(query, concept_name=concept_name)
         neighbors = [x['name'] for x in response.data()]
         return neighbors
 
-    def get_region(self, concept_name, weight_threshold=0):
+    def get_region(self, *concept_names):
         """
         Get all nodes/edges within one degree of freedom from concept
         args:
-            concept_name: name of node
-            weight_threshold: only nodes with weight >= this value 
-                will be returned
+            concept_name: name of node, or list of names
         returns:
             list of (from, to, from_weight, to_weight, edge_weight) dicts
         """
 
-        names = self.get_neighbors(concept_name, weight_threshold) + [concept_name,]
+        names = self.get_neighbors(*concept_names) + concept_names
         query = "MATCH (a:Concept)-[r:HAS]->(b:Concept) " \
             "WHERE a.name IN $names AND b.name IN $names " \
             "RETURN a.name AS from, b.name AS to, " \
@@ -97,7 +94,7 @@ class GraphSearch(object):
         data = self.graph.run(query, names=names).data()
         return data, names
 
-    def get_globe(self, weight_threshold=0):
+    def get_globe(self):
         """Get all edges in the graph database
         """
         query = "MATCH (a:Concept)-[r:HAS]->(b:Concept) " \
@@ -106,13 +103,13 @@ class GraphSearch(object):
         data = self.graph.run(query).data()
         return data
 
-    def get_scores(self, concept_name=None, weight_threshold=0):
+    def get_scores(self, concept_name=None):
         """Get sorted region concepts
         """
         if concept_name is None:
-            data = self.get_globe(weight_threshold)
+            data = self.get_globe()
         else:
-            data = self.get_region(concept_name, weight_threshold)
+            data = self.get_region(concept_name)
 
         gr = _get_networkx(data)
         scores = nx.pagerank(gr, weight='weight')

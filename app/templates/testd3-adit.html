@@ -24,7 +24,7 @@
             <form action="{{ url_for('index') }}" method = "POST">
                 <!-- <label for="search">Search:</label><br> -->
                 <input type="text" id="search" name="search_path" value="{{ query_name }}">
-                <a href="#" class="myButton">Search</a>
+                <a href="{{ url_for('index')}}" class="myButton">Search</a>
             </form>
             <div id="search-concepts">
                 {% for concept in concepts %}
