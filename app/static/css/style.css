@@ -2,7 +2,33 @@
     stroke: #999;
     stroke-opacity: 0.6;
 }
-.myButton {
+
+#search-btn {
+	box-shadow: 0px 10px 14px -7px #fafafa;
+	background:linear-gradient(to bottom, #27b3d6 5%, #27b3d6 100%);
+	background-color:#27b3d6;
+	border-radius:4px;
+	border:1px solid #52a0b3;
+	display:inline-block;
+	cursor:pointer;
+	color:#ffffff;
+	font-family:Arial;
+	font-size:13px;
+	font-weight:bold;
+	padding:12px 20px;
+	text-decoration:none;
+	text-shadow:0px 1px 0px #1f3312;
+}
+#search-btn:hover {
+	background:linear-gradient(to bottom, #27b3d6 5%, #27b3d6 100%);
+	background-color:#27b3d6;
+}
+#search-btn:active {
+	position:relative;
+	top:1px;
+}
+
+/* .myButton {
     box-shadow: 0px 10px 14px -7px #3e7327;
     background:linear-gradient(to bottom, #77b55a 5%, #72b352 100%);
     background-color:#77b55a;
@@ -25,7 +51,7 @@
 .myButton:active {
     position:relative;
     top:1px;
-}
+} */
 .nodes circle {
     stroke: #fff;
     stroke-width: 1.5px;
@@ -87,6 +113,15 @@ text {
     text-align: center;
 }
 
+.query {
+    background-color: #ff9999;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    border-radius: 5px;
+}
+
 .pattern {
     font-size: 18px;
 }
@@ -96,13 +131,12 @@ text {
     color: #808080;
 }
 
-.search-concept {
-    background-color: #ff9999;
-    padding-left: 10px;
-    padding-right: 10px;
-    padding-top: 10px;
-    padding-bottom: 10px;
-    border-radius: 10px;
+.label_cell {
+    background-color:#f2f2f2;
+}
+
+.label {
+    font-size: 20px;
 }
 
 td::after {     
@@ -114,4 +148,13 @@ td::after {
     margin-bottom: -1px;
     visibility: hidden;
     overflow: hidden;
+}
+
+.search-concept {
+    background-color: #ff9999;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-radius: 10px;
 }

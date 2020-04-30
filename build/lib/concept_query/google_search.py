@@ -60,12 +60,13 @@ class GoogleSearch:
 
         return result
 
-def _search(query, n_results=10, proxies=[], full=False):
+def _search(query, n_results=10, proxies=[], full=False, engine='bing'):
     # Uncomment to use Google
     # SEARCH_URL = "https://google.com/search"
 
     # Uncomment to use Bing
     SEARCH_URL = "https://www.bing.com/search"
+
     RESULTS_PER_PAGE = 10
 
     searchResults = []
@@ -133,6 +134,11 @@ def _search(query, n_results=10, proxies=[], full=False):
         time.sleep(1)
   
     return searchResults[:n_results]
+
+# def _parse_google(parser):
+#     for link in parser.xpath('//div[@class="r"]/a'):
+#         searchResults.append(link.get('href'))
+#     i += 1
 
 def _search_list(arr, records=[], n_results=10, proxies=[]):
     for query in arr:

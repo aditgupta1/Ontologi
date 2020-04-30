@@ -9,6 +9,7 @@ class GraphSearch(object):
         # self.graph = Graph(neo4j_url, password=kwargs['password'])
         self.graph = GraphDB(uri=neo4j_uri, user=neo4j_user, 
             password=neo4j_password, encrypted=neo4j_encrypted)
+        self.global_scores = self.get_scores()
 
     @classmethod
     def fromconfig(cls, config):
@@ -22,12 +23,18 @@ class GraphSearch(object):
         data = self.graph.run('MATCH (n:Concept {name: $name}) RETURN n', name=node_name).data()
         return len(data) > 0
 
-    def get_result(self, *query, prune=False):
+    def get_result(self, *query, prune=False, n_nodes=50, use_cache=False):
         """
         Get networkx representation of query results
         args:
             query: entity id, multi-word phrase must be joined by hyphens
                 or list if entity ids
+            prune: if true, repeately prune nodes that don't have outbound edges
+            n_nodes: number of nodes to return
+                if multiple query concepts, the result must contain all of them
+                so potentially there may be more than n_nodes
+                the graph is also pruned, so there may be less than n_nodes
+            use_cache: if true, use cached glocal scores
         returns:
             networkx digraph
         """
@@ -47,24 +54,30 @@ class GraphSearch(object):
         edges, neighbors = self.get_region(*node_names)
 
         # Get scores from global graph
-        scores = self.get_scores()
+        if not use_cache:
+            self.global_scores = self.get_scores()
 
         # Get region scores
-        score_sum = sum([scores[node] for node in neighbors])
+        score_sum = sum([self.global_scores[node] for node in neighbors])
         neighbor_scores = {}
         for node in neighbors:
-            neighbor_scores[node] = scores[node] / score_sum
+            neighbor_scores[node] = self.global_scores[node] / score_sum
+
+        # Get only a portion of the results
+        display_nodes = _slice_nodes(neighbor_scores, node_names, n_nodes)
 
         gr = nx.DiGraph()
-        for node in neighbors:
+        for node in display_nodes:
             # Normalize score based on first concept in query
-            gr.add_node(node, weight=neighbor_scores[node] / neighbor_scores[node_names[0]])
+            norm_score = neighbor_scores[node] / neighbor_scores[node_names[0]]
+            gr.add_node(node, weight=norm_score)
             
         for edge in edges:
-            gr.add_edge(edge['from'], edge['to'], weight=edge['edge_weight'])
+            if edge['from'] in display_nodes and edge['to'] in display_nodes:
+                gr.add_edge(edge['from'], edge['to'], weight=edge['edge_weight'])
 
         if prune:
-            gr = _prune_graph(gr, query)
+            gr = _prune_graph(gr, node_names)
 
         return gr
 
@@ -132,6 +145,9 @@ class GraphSearch(object):
 
         return scores
 
+    def refresh_global(self):
+        self.global_scores = self.get_scores()
+
 def _get_networkx(data):
     """
     Construct networkx directed graph from data list
@@ -151,10 +167,10 @@ def _get_networkx(data):
     
     return gr
 
-def _prune_graph(gr, query):
+def _prune_graph(gr, keep_nodes):
     """
     Remove all nodes that don't have any outbound nodes
-    Unless the node is original query"""
+    Unless the node is in keep_nodes"""
 
     G = gr
     continue_pruning = True
@@ -166,7 +182,7 @@ def _prune_graph(gr, query):
         # Get nodes
         display_nodes = []
         for node in G.nodes:
-            if G.out_degree(node) > 0 or node == query:
+            if G.out_degree(node) > 0 or node in keep_nodes:
                 display_nodes.append(node)
             else:
                 any_inbound_only = True
@@ -189,3 +205,29 @@ def _prune_graph(gr, query):
         step += 1
         
     return G
+
+def _slice_nodes(neighbor_scores, keep_nodes, n_nodes):
+    """
+    Get higher-scored and lower-scored nodes neighbors
+    With at max n_nodes
+    """
+    if len(neighbor_scores) <= n_nodes:
+        return neighbor_scores.keys()
+
+    sorted_neighbors = sorted(neighbor_scores, key=neighbor_scores.get, reverse=True)
+    search_node_indeces = [sorted_neighbors.index(node) for node in keep_nodes]
+    min_idx = min(search_node_indeces)
+    max_idx = max(search_node_indeces)
+
+    display_nodes = sorted_neighbors[min_idx:max_idx+1]
+    min_counter = min_idx-1
+    max_counter = max_idx + 1
+    while len(display_nodes) < n_nodes:
+        if min_counter >= 0:
+            display_nodes.insert(0, sorted_neighbors[min_counter])
+            min_counter -= 1
+        if max_counter < len(sorted_neighbors):
+            display_nodes.append(sorted_neighbors[max_counter])
+            max_counter += 1
+
+    return display_nodes

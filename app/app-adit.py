@@ -81,7 +81,7 @@ def get_data(query):
     #     data = json.load(f11)
     # query = 'tensorflow'
     concept_names = query.split(';')
-    gr = client.get_result(*concept_names, prune=True)
+    gr = client.get_result(*concept_names, prune=True, use_cache=True)
     # print('35>', gr.nodes)
 
     data = {}
@@ -123,7 +123,7 @@ def parse(nlp, text):
                 noun = token.ent_id_
             else:
                 noun = token.lemma_
-        concepts.append(noun)
+            concepts.append(noun)
 
     return concepts
 

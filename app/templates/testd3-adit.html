@@ -18,7 +18,7 @@
             <form action="{{ url_for('index') }}" method = "POST">
                 <!-- <label for="search">Search:</label><br> -->
                 <input type="text" id="search-bar" name="search_path" value="{{ search_text }}">
-                <a href="{{ url_for('index')}}" class="myButton">Search</a>
+                <input type="submit" id="search-btn" value="Search">
             </form>
         </div>
         
@@ -132,7 +132,7 @@ d3.json("{{ url_for('get_data', query=query_name)}}", function(error, graph) {
             .on("drag", dragged)
             .on("end", dragended))
         .on('click', function(d) {
-            $('#search').val(d.id);
+            $('#search-bar').val(d.id.replace('-', ' '));
             $('#search-btn').click();
             // window.location.replace(href);
         });
@@ -243,23 +243,50 @@ d3.json("{{ url_for('get_data', query=query_name)}}", function(error, graph) {
     // Concept Table
     graph.nodes.sort(function(a,b) { return b.score - a.score });
     var num_columns = 3;
-    var num_rows = Math.ceil(graph.nodes.length / num_columns);
+    var num_rows = Math.ceil((graph.nodes.length + 2) / num_columns);
 
     var rows = [];
     for (var i=0; i < num_rows; i++) {
         rows.push("")
     }
 
-    for (var i=0; i < graph.nodes.length; i++) {        
-        // var col = Math.floor(i / num_rows);
+    for (var i=0; i < graph.nodes.length + 2; i++) {
         let row = i % num_rows;
-        let title = graph.nodes[i].id + ' ' + graph.nodes[i].score;
-        let cell = "<td class='concept' id='c_" + graph.nodes[i].id + "' title='" + title + "'>" + 
-            "<span class='pattern'>" + graph.nodes[i].id + "</span> " + 
-            "<span class='score'>" + graph.nodes[i].score + "</span></td>";
+        let name, score, id;
+
+        if (i == 0) {
+            name = 'Broad';
+            score = 'score > 1';
+            id = 'broad';
+            td_cls = 'label_cell';
+            span_cls = 'non_query';
+            cls = 'label';
+        } else if (i == graph.nodes.length + 1) {
+            name = 'Narrow';
+            score = 'score < 1';
+            id = 'narrow';
+            td_cls = 'label_cell';
+            span_cls = 'non_query';
+            cls = 'label';
+        } else {
+            let node = graph.nodes[i-1];
+            name = node.id;
+            score = node.score;
+            id = 'c_' + name;
+            td_cls = 'concept';
+            span_cls = node.group == 1 ? 'query' : 'non_query';
+            cls = 'pattern';
+        }
+
+        let title = name + ' ' + score;
+
+        let cell = "<td class='" + td_cls + "' id='" + id + "' title='" + title + "'>" + 
+            "<span class='" + span_cls + "'>" +
+            "<span class='" + cls + "'>" + name + "</span> " + 
+            "<span class='score'>" + score + "</span></span></td>";
         // console.log(cell);
         
-        rows[row] += cell;        
+        rows[row] += cell;
     }
     // console.log(rows);
 
@@ -267,8 +294,15 @@ d3.json("{{ url_for('get_data', query=query_name)}}", function(error, graph) {
         $("#concept-table").append("<tr>" + rows[i] + "</tr>");
     }
 
+    $('.pattern').on('click', function() {
+        let name = $(this).closest('td').attr('id').slice(2);
+        $('#search-bar').val(name.replace('-', ' '));
+        $('#search-btn').click();
+        // window.location.replace(href);
+    });
+
     $('.pattern').on('mouseover', function() {
-        var name = $(this).parent().attr('id').slice(2);
+        var name = $(this).closest('td').attr('id').slice(2);
         // console.log(name);
 
         node
@@ -285,7 +319,7 @@ d3.json("{{ url_for('get_data', query=query_name)}}", function(error, graph) {
     });
 
     $('.pattern').on('mouseout', function() {
-        var name = $(this).parent().attr('id').slice(2);
+        var name = $(this).closest('td').attr('id').slice(2);
         // console.log(name);
 
         node
