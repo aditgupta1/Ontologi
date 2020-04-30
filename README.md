@@ -14,6 +14,6 @@ Ontologi provides a new way to search the internet by finding lower-level and hi
 - Albert Gong
 - Adit Gupta
 
-# Contact 
+## Contact 
 Contact us at ontologi.search@gmail.com
 
