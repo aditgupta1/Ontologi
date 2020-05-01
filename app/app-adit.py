@@ -20,7 +20,7 @@ URL = 'http://127.0.0.1:1001'
 
 config = toml.load('../config.toml')
 client = GraphSearch.fromconfig(config['NEO4J_CLOUD'])
-g = GoogleSearch()
+g = GoogleSearch(engine='google')
 sql = SqlDB.fromconfig(config['SQL_CLOUD'])
 
 """
@@ -60,20 +60,21 @@ def index():
     if request.method == 'POST':
         if 'search_path' in request.form:
             search_text = request.form['search_path']
-
+            print('63>', search_text)
             concepts = parse(nlp, search_text)
             print('58>', concepts)
             
             if len(concepts) > 0:
                 query = ';'.join(concepts)
-                link_data = g.search(search_text, full=True)
+                link_data = g.search(search_text, full=True, n_results=15)
                 print('27>', query)
                 return render_template('testd3-adit.html', 
                     query_name=query, links = link_data, concepts=[commonize(x) for x in concepts],
                     search_text=search_text)
 
-    return render_template('testd3-adit.html', query_name='tensorflow', 
-        links = g.search('tensorflow', full=True), concepts=[])
+    # return render_template('testd3-adit.html', query_name='tensorflow', 
+    #     links = g.search('tensorflow', full=True, n_results=15), concepts=[])
+    return render_template('testd3-adit.html', query_name='', links=[], concepts=[])
 
 @app.route('/data/<query>')
 def get_data(query):
@@ -108,7 +109,7 @@ def get_data(query):
 
 def parse(nlp, text):
     """Get concepts from text"""
-    doc = nlp(text)
+    doc = nlp(text.strip())
 
     # Retokenize
     with doc.retokenize() as retokenizer:
@@ -118,12 +119,11 @@ def parse(nlp, text):
     # Get nouns and entities
     concepts = []
     for token in doc:
-        if token.pos_ in ['NOUN', 'PROPN', 'X'] and len(token.text) > 1:
-            if token.ent_id_ != '':
-                noun = token.ent_id_
-            else:
-                noun = token.lemma_
-            concepts.append(noun)
+        print(token, token.pos_)
+        if token.ent_id_ != '':
+            concepts.append(token.ent_id_)
+        elif token.pos_ in ['NOUN', 'PROPN', 'X'] and len(token.text) > 1:
+            concepts.append(token.lemma_)
 
     return concepts
 
