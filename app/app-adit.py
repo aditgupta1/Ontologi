@@ -16,7 +16,7 @@ from concept_query import GraphSearch, GoogleSearch
 from concept_query.db import SqlDB
 
 app = Flask(__name__)
-URL = 'http://127.0.0.1:1001'
+URL = 'http://127.0.0.1:5000'
 
 config = toml.load('../config.toml')
 client = GraphSearch.fromconfig(config['NEO4J_CLOUD'])
@@ -133,4 +133,4 @@ def commonize(concept):
     return concept
         
 if __name__ == '__main__':
-    app.run(debug=True, port=1001)
+    app.run(debug=True, port=5000)
