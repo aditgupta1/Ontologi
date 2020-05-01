@@ -8,7 +8,18 @@ Ontologi provides a new way to search the internet by finding lower-level and hi
 ## Setup
 To install Ontologi, clone this repository and run 
 
-```python setup.py install```
+```
+python setup.py install
+```
+
+## Usage
+In the cloned repository, run 
+
+```
+python app/app-adit.py
+```
+
+to run flask application which will render concept graph
 
 ## Team
 - Albert Gong
