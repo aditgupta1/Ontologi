@@ -98,12 +98,13 @@ text {
     float: left;
     padding-left: 10%;
     padding-right: 5%;
-
+    padding-bottom: 1in;
 }
 
 #right_col {
     width: 50%;
     float: right;
+    padding-bottom: 1in;
 }
 
 #concept-table {
@@ -142,12 +143,13 @@ text {
 td::after {     
     display: block;
     content:attr(title);
-    font-weight: bold;
+    font-weight: 900;
     color: transparent;
     height: 1px;
     margin-bottom: -1px;
     visibility: hidden;
     overflow: hidden;
+    font-size: 18px;
 }
 
 .search-concept {
