@@ -3,7 +3,11 @@
 ## Description
 Ontologi provides a new way to search the internet by finding lower-level and higher-level concepts related to a search query. Our approach is fully unsupervised and does not require the use of existing concept databases, such as DBpedia and Wikidata, to find keyword relationships.
 
-![alt text](https://github.com/aditgupta1/Ontologi/blob/master/screenshots/Annotation%202020-05-01%20004342.png?raw=true)
+Video Demo:
+
+https://youtu.be/_cs7xNuNz1A
+
+![alt text](screenshots/tensorflow-example.png)
 
 ## Setup
 To install Ontologi, clone this repository and run 
